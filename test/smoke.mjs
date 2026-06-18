@@ -28,6 +28,34 @@ try {
 
   const paras = await page.locator('#doc p').count();
   paras > 0 ? ok('document paragraphs present') : fail('no paragraphs rendered');
+
+  // select the first paragraph's text and click the floating add button
+  await page.evaluate(() => {
+    const p = document.querySelector('#doc p');
+    const r = document.createRange(); r.selectNodeContents(p);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  await page.waitForSelector('#addBtn', { state: 'visible' });
+  // real trusted mouse click at the button's centre. page.click()'s hover/scroll
+  // actionability sequence stalls on this fixed-position overlay after a
+  // programmatic selection; a direct mouse click drives the same mousedown+click
+  // handlers a user would trigger.
+  const addBox = await page.locator('#addBtn').boundingBox();
+  await page.mouse.click(addBox.x + addBox.width / 2, addBox.y + addBox.height / 2);
+  await page.waitForSelector('#threads .thread', { timeout: 3000 });
+  const threadCount = await page.locator('#threads .thread').count();
+  threadCount >= 1 ? ok('selecting text creates a thread') : fail('no thread created');
+
+  // type a message and send, then confirm it persisted to comments.json via the server
+  await page.fill('#threads .thread textarea', 'Это понятно?');
+  await page.click('#threads .thread [data-act="send"]');
+  await page.waitForTimeout(700); // debounce + POST
+  const saved = JSON.parse(readFileSync(join(dir, 'comments.json'), 'utf8'));
+  (saved.threads[0] && saved.threads[0].messages.some(m => m.text === 'Это понятно?'))
+    ? ok('comment persisted to comments.json') : fail('comment not persisted');
+  const mark = await page.locator('#doc mark.hl').count();
+  mark >= 1 ? ok('highlight rendered in document') : fail('no highlight mark');
 } catch (e) {
   fail(e.message);
 } finally {
