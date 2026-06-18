@@ -60,6 +60,14 @@ try {
   glossCount >= 1 ? ok('glossary terms wrapped with tooltip spans') : fail('no .gloss spans');
   const def = await page.locator('#doc .gloss').first().getAttribute('data-def');
   def && def.length > 0 ? ok('glossary tooltip has a definition') : fail('gloss span missing data-def');
+
+  const det = page.locator('#doc details').first();
+  (await det.count()) ? ok('details block present') : fail('no details block');
+  const bodyVisibleClosed = await det.locator('p').first().isVisible();
+  !bodyVisibleClosed ? ok('details collapsed by default') : fail('details not collapsed');
+  await det.locator('summary').click();
+  const bodyVisibleOpen = await det.locator('p').first().isVisible();
+  bodyVisibleOpen ? ok('details expands on click') : fail('details did not expand');
 } catch (e) {
   fail(e.message);
 } finally {
