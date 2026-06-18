@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doc Review</title>
+<style>
+  :root{
+    --teal-9:#1D7874; --teal-10:#17605D; --teal-11:#145451;
+    --slate-1:#fff; --slate-2:#F8F8F8; --slate-3:#F3F3F3; --slate-4:#ECECEC;
+    --slate-6:#dcdcdc; --slate-8:#c3c3c3; --slate-11:#5b5e57; --slate-12:#12130F;
+    --red-9:#ED254E; --green-9:#2f9e44; --yellow-9:#FFBF00; --plum-9:#c200fb; --blue-9:#06AED5;
+    --body:'Nunito Sans',system-ui,sans-serif; --head:'DM Sans',system-ui,sans-serif;
+    --radius:8px; --shadow-2:0 2px 6px rgba(18,19,15,.08); --shadow-3:0 8px 24px rgba(18,19,15,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--body);color:var(--slate-12);background:var(--slate-2);line-height:1.55;font-size:15px}
+  h1,h2,h3{font-family:var(--head);line-height:1.2;margin:1.6em 0 .5em}
+  h1{font-size:30px;margin-top:0}
+  h2{font-size:22px;border-bottom:2px solid var(--slate-4);padding-bottom:6px}
+  h3{font-size:17px}
+  p,li{font-size:15px}
+  code{background:var(--slate-3);padding:1px 5px;border-radius:4px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{background:var(--slate-12);color:#e6e6e6;padding:14px 16px;border-radius:var(--radius);overflow:auto;font-size:12.5px;line-height:1.45}
+  pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;margin:.6em 0;font-size:14px}
+  th,td{border:1px solid var(--slate-6);padding:6px 10px;text-align:left;vertical-align:top}
+  th{background:var(--slate-3);font-family:var(--head)}
+  a{color:var(--teal-10)}
+  .wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:0;max-width:1280px;margin:0 auto}
+  /* document */
+  #doc{background:var(--slate-1);padding:34px 40px 120px;min-height:100vh;box-shadow:var(--shadow-2)}
+  .lead{color:var(--slate-11);font-size:16px}
+  .q{background:#FFF8E1;border-left:4px solid var(--yellow-9);padding:10px 14px;border-radius:0 6px 6px 0;margin:10px 0}
+  .q b{font-family:var(--head)}
+  .ascii{font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:pre;background:var(--slate-3);padding:12px;border-radius:6px;overflow:auto}
+  .tag{display:inline-block;font-size:11px;font-family:var(--head);font-weight:600;padding:1px 8px;border-radius:999px;background:var(--teal-9);color:#fff;vertical-align:middle}
+  .tag.muted{background:var(--slate-8)}
+  /* highlights */
+  mark.hl{background:#FFE08A;border-radius:2px;cursor:pointer;padding:0 1px;box-shadow:inset 0 -2px 0 var(--yellow-9)}
+  mark.hl.hl-resolved{background:#d7f0dc;box-shadow:inset 0 -2px 0 var(--green-9)}
+  mark.hl.flash{animation:flash 1.1s ease}
+  @keyframes flash{0%,100%{background:#FFE08A}40%{background:#ffd24d}}
+  /* floating add button */
+  #addBtn{position:fixed;z-index:50;display:none;background:var(--teal-9);color:#fff;border:none;
+    font-family:var(--head);font-weight:600;font-size:13px;padding:7px 12px;border-radius:999px;
+    box-shadow:var(--shadow-3);cursor:pointer}
+  #addBtn:hover{background:var(--teal-10)}
+  /* comments panel */
+  #panel{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;background:var(--slate-2);border-left:1px solid var(--slate-6)}
+  .p-head{padding:12px 14px;border-bottom:1px solid var(--slate-6);background:var(--slate-1)}
+  .p-head h2{margin:0 0 8px;border:none;font-size:16px;padding:0}
+  .p-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .p-row .grow{flex:1}
+  select,.btn{font-family:var(--head);font-size:13px;border-radius:6px;border:1px solid var(--slate-6);background:#fff;padding:5px 9px;cursor:pointer}
+  .btn{background:var(--teal-9);color:#fff;border-color:var(--teal-9);font-weight:600}
+  .btn:hover{background:var(--teal-10)}
+  .btn.ghost{background:#fff;color:var(--slate-12);border-color:var(--slate-6);font-weight:500}
+  .btn.ghost:hover{background:var(--slate-3)}
+  .btn.sm{padding:4px 8px;font-size:12px}
+  .hint{font-size:12px;color:var(--slate-11)}
+  #threads{flex:1;overflow:auto;padding:12px}
+  .group-title{font-family:var(--head);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-11);margin:8px 2px}
+  .thread{background:#fff;border:1px solid var(--slate-6);border-radius:var(--radius);padding:10px;margin-bottom:10px}
+  .thread.resolved{opacity:.8;background:#fafdfb}
+  .thread.focused{border-color:var(--teal-9);box-shadow:0 0 0 2px rgba(29,120,116,.2)}
+  .thread.orphan{border-style:dashed}
+  .t-quote{font-size:12.5px;color:var(--slate-11);font-style:italic;cursor:pointer;border-left:3px solid #FFE08A;padding-left:8px;margin-bottom:8px}
+  .thread.resolved .t-quote{border-left-color:var(--green-9)}
+  .t-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .t-bar .spacer{flex:1}
+  .pill{font-family:var(--head);font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--slate-3);color:var(--slate-11)}
+  .pill.open{background:#fff3cd;color:#8a6d00}
+  .pill.resolved{background:#d7f0dc;color:#1d6a2c}
+  .pill.warn{background:#fde2e6;color:#a01432}
+  .cnt{font-size:11px;color:var(--slate-11)}
+  .lnk{background:none;border:none;color:var(--teal-10);font-size:12px;cursor:pointer;padding:2px 3px;font-family:var(--head);font-weight:600}
+  .lnk:hover{text-decoration:underline}
+  .lnk.del{color:var(--slate-11)}
+  .lnk.del:hover{color:var(--red-9)}
+  .msg{border-top:1px solid var(--slate-3);padding:6px 0 2px}
+  .msg-h{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--slate-11)}
+  .who{font-family:var(--head);font-weight:700;font-size:12px;color:var(--slate-12)}
+  .msg.claude .who{color:var(--plum-9)}
+  .msg.user .who{color:var(--teal-11)}
+  .msg-b{font-size:13.5px;margin:2px 0 4px;white-space:pre-wrap;word-break:break-word}
+  .composer{margin-top:6px}
+  .composer textarea{width:100%;min-height:52px;resize:vertical;font-family:var(--body);font-size:13px;padding:7px 8px;border:1px solid var(--slate-6);border-radius:6px}
+  .composer-a{display:flex;gap:6px;margin-top:4px}
+  .empty{color:var(--slate-11);font-size:13px;text-align:center;padding:24px 8px}
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(18,19,15,.4);display:none;align-items:center;justify-content:center;z-index:100}
+  .modal{background:#fff;border-radius:12px;padding:18px;width:min(560px,92vw);box-shadow:var(--shadow-3)}
+  .modal h3{margin-top:0}
+  .modal textarea{width:100%;height:200px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--slate-6);border-radius:6px;padding:8px}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--slate-12);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;z-index:200;opacity:0;transition:opacity .2s;font-family:var(--head)}
+  .toast.show{opacity:1}
+  @media(max-width:1000px){.wrap{grid-template-columns:1fr}#panel{position:fixed;right:0;top:0;width:340px;z-index:60;transform:translateX(100%);transition:transform .2s;box-shadow:var(--shadow-3)}#panel.open{transform:none}#mobToggle{display:inline-block!important}}
+  #mobToggle{display:none;position:fixed;right:14px;bottom:14px;z-index:70}
+</style>
+<script src="./marked.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <!-- ===================== DOCUMENT ===================== -->
+  <article id="doc"><p class="empty">Загрузка документа…</p></article>
+
+  <!-- ===================== COMMENTS PANEL ===================== -->
+  <aside id="panel">
+    <div class="p-head">
+      <h2>💬 Обсуждение</h2>
+      <div class="p-row">
+        <label class="hint">Я отвечаю как:</label>
+        <select id="author"><option value="user">Я</option><option value="claude">Claude</option></select>
+        <span class="grow"></span>
+        <label class="hint"><input type="checkbox" id="hideRes"> скрыть решённые</label>
+      </div>
+      <div class="p-row" style="margin-top:8px">
+        <span id="sync" class="hint">⏳ подключение…</span>
+        <button class="lnk" id="howBtn" style="margin-left:auto">Как это работает?</button>
+      </div>
+      <div id="howBox" class="hint" style="display:none;margin-top:8px;background:var(--slate-3);padding:8px;border-radius:6px">
+        <b>Авто-режим (через локальный сервер):</b> комментарии сразу пишутся в <code>comments.json</code>, ответы Claude появляются сами в течение пары секунд.<br><br>
+        <b>Резервный вариант</b> (файл открыт напрямую): кнопки <button class="lnk" id="expBtn">⬇ Экспорт</button> / <button class="lnk" id="impBtn">⬆ Импорт</button> для ручного обмена JSON.
+      </div>
+    </div>
+    <div id="threads"></div>
+  </aside>
+</div>
+
+<button id="addBtn">💬 Комментировать</button>
+<button class="btn" id="mobToggle">💬</button>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Импорт обсуждения</h3>
+    <p class="hint" id="modalHint">Вставь содержимое <code>comments.json</code>. Текущие комментарии будут заменены.</p>
+    <textarea id="modalTa" placeholder='{"version":1,"threads":[...]}'></textarea>
+    <div class="composer-a" style="margin-top:10px;justify-content:flex-end">
+      <button class="btn ghost" id="modalCancel">Отмена</button>
+      <button class="btn" id="modalOk">Импортировать</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var STORE_KEY = 'screens-admin-plan-comments-v1';
+  var docEl = document.getElementById('doc');
+  var threadsEl = document.getElementById('threads');
+  var addBtn = document.getElementById('addBtn');
+  var authorSel = document.getElementById('author');
+  var hideResChk = document.getElementById('hideRes');
+
+  var state = { threads: [], hideResolved: false };
+  function buildGlossary(){}   // replaced in Task 6
+  function buildToc(){}        // replaced in Task 8
+  var currentAuthor = 'user';
+  var replyTo = null;            // message id we are replying to
+  var lastRange = null;
+
+  // ---------- utils ----------
+  function uid(){ return 'id' + Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+  function nowts(){ return Date.now(); }
+  function fmt(ts){ try{ return new Date(ts).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''+ts; } }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},1800); }
+
+  // ---------- persistence & auto-sync ----------
+  var SERVER = /^https?:$/.test(location.protocol);   // открыто через serve.js
+  var lastVersion = null;                              // версия (mtime) файла, которую мы знаем
+  var saveTimer = null;
+  function strip(threads){ return JSON.parse(JSON.stringify(threads, function(k,v){ return k.charAt(0)==='_'?undefined:v; })); }
+  function payload(){ return JSON.stringify({version:1, threads:strip(state.threads)}, null, 2); }
+  function setSync(t){ var el=document.getElementById('sync'); if(el) el.textContent=t; }
+  function typing(){ var a=document.activeElement; return a && a.tagName==='TEXTAREA'; }
+  function saveLocal(){ try{ localStorage.setItem(STORE_KEY, payload()); }catch(e){} }
+  function loadLocal(){ try{ var raw=localStorage.getItem(STORE_KEY); if(raw){ var d=JSON.parse(raw); if(d&&Array.isArray(d.threads)){ state.threads=d.threads; return true; } } }catch(e){} return false; }
+  function save(){ saveLocal(); if(SERVER){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(pushServer, 350); } }
+  function pushServer(){
+    fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:payload()})
+      .then(function(r){ if(r.ok){ var v=r.headers.get('X-Version'); if(v) lastVersion=v; setSync('✓ сохранено'); } else { setSync('⚠ ошибка'); } })
+      .catch(function(){ setSync('⚠ нет связи'); });
+  }
+  function pullServer(initial){
+    return fetch('/api/comments',{cache:'no-store'}).then(function(r){
+      var v=r.headers.get('X-Version');
+      return r.json().then(function(d){
+        if(!d||!Array.isArray(d.threads)) return;
+        if(initial){
+          if(!d.threads.length && state.threads.length){ pushServer(); setSync('✓ синхронизация'); return; }  // перенос локальных в файл
+          state.threads=d.threads; lastVersion=v; saveLocal(); render(); setSync('✓ синхронизация');
+        } else if(v && v!==lastVersion && !typing()){
+          state.threads=d.threads; lastVersion=v; saveLocal(); render(); setSync('↻ обновлено');
+        }
+      });
+    }).catch(function(){ setSync('⚠ нет связи'); });
+  }
+
+  // ---------- text offsets ----------
+  function offsetOf(node, off){ var r=document.createRange(); r.setStart(docEl,0); try{ r.setEnd(node,off);}catch(e){return 0;} return r.toString().length; }
+  function textNodes(){ var w=document.createTreeWalker(docEl,NodeFilter.SHOW_TEXT,null), a=[], n; while((n=w.nextNode())){ a.push(n); } return a; }
+
+  // ---------- highlights ----------
+  function clearHighlights(){
+    var marks=docEl.querySelectorAll('mark.hl');
+    for(var i=0;i<marks.length;i++){ var m=marks[i], p=m.parentNode; while(m.firstChild){ p.insertBefore(m.firstChild,m); } p.removeChild(m); }
+    docEl.normalize();
+  }
+  function resolveSpan(t){
+    var full=docEl.textContent;
+    if(typeof t.start==='number' && typeof t.end==='number' && full.slice(t.start,t.end)===t.quote){ return {start:t.start,end:t.end}; }
+    if(t.quote){ var i=full.indexOf(t.quote); if(i>=0){ return {start:i,end:i+t.quote.length}; } }
+    return null;
+  }
+  function renderHighlights(){
+    clearHighlights();
+    state.threads.forEach(function(t){
+      var span=resolveSpan(t); t._orphan=!span; if(!span) return;
+      var nodes=textNodes(), pos=0;
+      for(var i=0;i<nodes.length;i++){
+        var tn=nodes[i], len=tn.nodeValue.length, s=pos, e=pos+len; pos=e;
+        if(e<=span.start || s>=span.end) continue;
+        var from=Math.max(span.start,s)-s, to=Math.min(span.end,e)-s;
+        try{
+          var r=document.createRange(); r.setStart(tn,from); r.setEnd(tn,to);
+          var mk=document.createElement('mark'); mk.className='hl'+(t.status==='resolved'?' hl-resolved':''); mk.dataset.tid=t.id;
+          r.surroundContents(mk);
+        }catch(e2){}
+      }
+    });
+  }
+
+  // ---------- selection -> add button ----------
+  function hideAdd(){ addBtn.style.display='none'; }
+  function showAddAt(rect){
+    addBtn.style.display='block';
+    var x=Math.min(rect.right, window.innerWidth-160), y=rect.bottom+8;
+    if(y>window.innerHeight-50){ y=rect.top-40; }
+    addBtn.style.left=Math.max(8,x)+'px'; addBtn.style.top=y+'px';
+  }
+  document.addEventListener('selectionchange', function(){
+    var sel=document.getSelection();
+    if(!sel||sel.isCollapsed||!sel.rangeCount){ hideAdd(); return; }
+    var range=sel.getRangeAt(0);
+    if(!docEl.contains(range.commonAncestorContainer)){ hideAdd(); return; }
+    if(!range.toString().trim()){ hideAdd(); return; }
+    lastRange=range.cloneRange();
+    showAddAt(range.getBoundingClientRect());
+  });
+  addBtn.addEventListener('mousedown', function(e){ e.preventDefault(); }); // keep selection
+  addBtn.addEventListener('click', function(){
+    if(!lastRange) return;
+    var start=offsetOf(lastRange.startContainer,lastRange.startOffset);
+    var end=offsetOf(lastRange.endContainer,lastRange.endOffset);
+    if(end<=start){ hideAdd(); return; }
+    var t={ id:uid(), quote:lastRange.toString(), start:start, end:end, status:'open', createdAt:nowts(), messages:[] };
+    state.threads.push(t); save(); render();
+    var s=document.getSelection(); if(s) s.removeAllRanges(); hideAdd();
+    var ta=document.getElementById('ta-'+t.id+'-root'); if(ta){ ta.scrollIntoView({block:'center'}); ta.focus(); }
+  });
+
+  // ---------- message tree helpers ----------
+  function findMsg(list,id){ for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; var c=findMsg(list[i].children||[],id); if(c) return c; } return null; }
+  function delMsg(list,id){ for(var i=0;i<list.length;i++){ if(list[i].id===id){ list.splice(i,1); return true; } if(delMsg(list[i].children||[],id)) return true; } return false; }
+  function countMsgs(t){ var n=0; (function rec(l){ for(var i=0;i<l.length;i++){ n++; rec(l[i].children||[]); } })(t.messages||[]); return n; }
+  function getThread(id){ for(var i=0;i<state.threads.length;i++){ if(state.threads[i].id===id) return state.threads[i]; } return null; }
+
+  // ---------- render ----------
+  function composerHtml(tid,pid){
+    var key=tid+'-'+(pid||'root');
+    return '<div class="composer"><textarea id="ta-'+key+'" placeholder="Текст… (Ctrl/Cmd+Enter — отправить)"></textarea>'
+      +'<div class="composer-a"><button class="btn sm" data-act="send" data-tid="'+tid+'" data-pid="'+(pid||'')+'">Отправить</button>'
+      +(pid?'<button class="btn ghost sm" data-act="cancel">Отмена</button>':'')+'</div></div>';
+  }
+  function msgHtml(t,m,depth){
+    var h='<div class="msg '+m.author+'" style="margin-left:'+(depth*12)+'px">'
+      +'<div class="msg-h"><span class="who">'+(m.author==='claude'?'Claude':'Я')+'</span><span>'+fmt(m.createdAt)+'</span>'
+      +'<span style="flex:1"></span>'
+      +'<button class="lnk" data-act="reply" data-tid="'+t.id+'" data-mid="'+m.id+'">Ответить</button>'
+      +'<button class="lnk del" data-act="delmsg" data-tid="'+t.id+'" data-mid="'+m.id+'" title="Удалить">×</button></div>'
+      +'<div class="msg-b">'+esc(m.text)+'</div></div>';
+    if(replyTo===m.id){ h+=composerHtml(t.id,m.id); }
+    (m.children||[]).forEach(function(c){ h+=msgHtml(t,c,depth+1); });
+    return h;
+  }
+  function threadHtml(t){
+    var q=t.quote||''; var qs=q.length>140?q.slice(0,140)+'…':q;
+    return '<div class="thread '+t.status+(t._orphan?' orphan':'')+'" data-tid="'+t.id+'">'
+      +'<div class="t-quote" data-act="jump" data-tid="'+t.id+'">“'+esc(qs)+'”</div>'
+      +'<div class="t-bar"><span class="pill '+t.status+'">'+(t.status==='resolved'?'Решено':'Открыто')+'</span>'
+      +(t._orphan?'<span class="pill warn">текст изменён</span>':'')
+      +'<span class="cnt">'+countMsgs(t)+' сообщ.</span><span class="spacer"></span>'
+      +'<button class="lnk" data-act="'+(t.status==='resolved'?'reopen':'resolve')+'" data-tid="'+t.id+'">'+(t.status==='resolved'?'Открыть':'Решить')+'</button>'
+      +'<button class="lnk del" data-act="delthread" data-tid="'+t.id+'">Удалить</button></div>'
+      +'<div class="t-msgs">'+(t.messages||[]).map(function(m){return msgHtml(t,m,0);}).join('')+'</div>'
+      +composerHtml(t.id,null)+'</div>';
+  }
+  function render(){
+    var open=state.threads.filter(function(t){return t.status!=='resolved';});
+    var res=state.threads.filter(function(t){return t.status==='resolved';});
+    var html='';
+    if(!state.threads.length){ html='<div class="empty">Пока нет комментариев.<br>Выдели текст в плане слева и нажми «💬 Комментировать».</div>'; }
+    else{
+      html+='<div class="group-title">Открытые ('+open.length+')</div>';
+      html+= open.length?open.map(threadHtml).join(''):'<div class="empty" style="padding:8px">нет открытых</div>';
+      if(!state.hideResolved && res.length){ html+='<div class="group-title">Решённые ('+res.length+')</div>'+res.map(threadHtml).join(''); }
+      else if(res.length){ html+='<div class="group-title">Решённые ('+res.length+') — скрыты</div>'; }
+    }
+    threadsEl.innerHTML=html;
+    renderHighlights();
+  }
+
+  // ---------- panel interactions ----------
+  threadsEl.addEventListener('click', function(e){
+    var b=e.target.closest('[data-act]'); if(!b) return;
+    var act=b.dataset.act, tid=b.dataset.tid, t=tid?getThread(tid):null;
+    if(act==='jump'){ jumpTo(tid); return; }
+    if(act==='resolve' && t){ t.status='resolved'; save(); render(); return; }
+    if(act==='reopen' && t){ t.status='open'; save(); render(); return; }
+    if(act==='delthread' && t){ if(confirm('Удалить тему целиком?')){ state.threads=state.threads.filter(function(x){return x.id!==tid;}); save(); render(); } return; }
+    if(act==='reply'){ replyTo=(replyTo===b.dataset.mid?null:b.dataset.mid); render(); var ta=document.getElementById('ta-'+tid+'-'+b.dataset.mid); if(ta) ta.focus(); return; }
+    if(act==='cancel'){ replyTo=null; render(); return; }
+    if(act==='delmsg' && t){ if(confirm('Удалить это сообщение и ответы на него?')){ delMsg(t.messages,b.dataset.mid); save(); render(); } return; }
+    if(act==='send' && t){ sendMsg(t, b.dataset.pid||null); return; }
+  });
+  threadsEl.addEventListener('keydown', function(e){
+    if((e.ctrlKey||e.metaKey) && e.key==='Enter' && e.target.tagName==='TEXTAREA'){
+      var id=e.target.id; // ta-<tid>-<pid|root>
+      var rest=id.slice(3); var dash=rest.indexOf('-'); var tid=rest.slice(0,dash); var pid=rest.slice(dash+1);
+      var t=getThread(tid); if(t){ sendMsg(t, pid==='root'?null:pid); }
+    }
+  });
+  function sendMsg(t, pid){
+    var ta=document.getElementById('ta-'+t.id+'-'+(pid||'root')); if(!ta) return;
+    var text=ta.value.trim(); if(!text) return;
+    var m={ id:uid(), author:currentAuthor, text:text, createdAt:nowts(), children:[] };
+    if(pid){ var parent=findMsg(t.messages,pid); if(parent){ (parent.children=parent.children||[]).push(m); } else { t.messages.push(m); } }
+    else { t.messages.push(m); }
+    replyTo=null; save(); render();
+  }
+  function jumpTo(tid){
+    var mk=docEl.querySelector('mark.hl[data-tid="'+tid+'"]');
+    if(mk){ mk.scrollIntoView({block:'center',behavior:'smooth'}); mk.classList.add('flash'); setTimeout(function(){mk.classList.remove('flash');},1100); }
+    var th=threadsEl.querySelector('.thread[data-tid="'+tid+'"]');
+    if(th){ th.classList.add('focused'); setTimeout(function(){th.classList.remove('focused');},1200); }
+  }
+
+  // click highlight -> focus thread
+  docEl.addEventListener('click', function(e){
+    var mk=e.target.closest('mark.hl'); if(!mk) return;
+    var tid=mk.dataset.tid; var th=threadsEl.querySelector('.thread[data-tid="'+tid+'"]');
+    if(th){ if(document.getElementById('panel').classList) document.getElementById('panel').classList.add('open'); th.scrollIntoView({block:'center',behavior:'smooth'}); th.classList.add('focused'); setTimeout(function(){th.classList.remove('focused');},1200); }
+  });
+
+  // ---------- toolbar ----------
+  authorSel.addEventListener('change', function(){ currentAuthor=authorSel.value; });
+  hideResChk.addEventListener('change', function(){ state.hideResolved=hideResChk.checked; render(); });
+  document.getElementById('howBtn').addEventListener('click', function(){ var b=document.getElementById('howBox'); b.style.display=b.style.display==='none'?'block':'none'; });
+
+  document.getElementById('expBtn').addEventListener('click', function(){
+    var data=JSON.stringify({version:1, exportedAt:new Date().toISOString(), threads:strip(state.threads)}, null, 2);
+    try{ var blob=new Blob([data],{type:'application/json'}); var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download='comments.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }catch(e){}
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(data).then(function(){toast('Скачано + скопировано в буфер');},function(){toast('Скачано');}); }
+    else { toast('Скачано'); }
+  });
+  // modal (import)
+  var modalBg=document.getElementById('modalBg'), modalTa=document.getElementById('modalTa');
+  document.getElementById('impBtn').addEventListener('click', function(){ modalTa.value=''; modalBg.style.display='flex'; modalTa.focus(); });
+  document.getElementById('modalCancel').addEventListener('click', function(){ modalBg.style.display='none'; });
+  modalBg.addEventListener('click', function(e){ if(e.target===modalBg) modalBg.style.display='none'; });
+  document.getElementById('modalOk').addEventListener('click', function(){
+    try{ var d=JSON.parse(modalTa.value); if(!d||!Array.isArray(d.threads)) throw 0;
+      state.threads=d.threads; save(); render(); modalBg.style.display='none'; toast('Импортировано: '+d.threads.length+' тем');
+    }catch(e){ toast('Не удалось разобрать JSON'); }
+  });
+
+  // mobile panel toggle
+  document.getElementById('mobToggle').addEventListener('click', function(){ document.getElementById('panel').classList.toggle('open'); });
+
+  // ---------- document rendering ----------
+  function mdToHtml(md){
+    try { return (window.marked && (window.marked.parse ? window.marked.parse(md) : window.marked(md))) || ''; }
+    catch(e){ return '<pre>'+esc(md)+'</pre>'; }
+  }
+  function renderDoc(md){
+    docEl.innerHTML = mdToHtml(md);
+    buildGlossary();      // Task 6 (no-op until defined)
+    buildToc();           // Task 8 (no-op until defined)
+  }
+  function loadDoc(){
+    var url = SERVER ? '/human.md' : './human.md';
+    return fetch(url,{cache:'no-store'}).then(function(r){ return r.ok?r.text():''; })
+      .then(function(md){ if(md) renderDoc(md); else docEl.innerHTML='<p class="empty">Документ не найден (human.md).</p>'; })
+      .catch(function(){ docEl.innerHTML='<p class="empty">Не удалось загрузить human.md.</p>'; });
+  }
+
+  // ---------- init ----------
+  loadLocal();
+  loadDoc().then(function(){
+    render();                       // renders threads + highlights over the now-mounted doc
+    if(SERVER){
+      setSync('⏳ подключение…');
+      pullServer(true);
+      setInterval(function(){ pullServer(false); }, 4000);
+    } else {
+      setSync('файл-режим (Экспорт/Импорт)');
+      if(!state.threads.length){
+        fetch('./comments.json',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+          .then(function(d){ if(d&&Array.isArray(d.threads)&&d.threads.length){ state.threads=d.threads; saveLocal(); render(); } })
+          .catch(function(){});
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
