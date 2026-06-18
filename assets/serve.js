@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Крошечный локальный сервер для plan.html: статика + чтение/запись comments.json.
-// Запуск:  node .claude/plan/serve.js   →   http://localhost:4178/
+// Крошечный локальный сервер для review.html: статика + чтение/запись comments.json.
+// Запуск:  node serve.js   →   http://localhost:4178/
 'use strict';
 const http = require('http');
 const fs = require('fs');
