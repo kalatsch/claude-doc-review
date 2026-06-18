@@ -42,6 +42,12 @@
   mark.hl.hl-resolved{background:#d7f0dc;box-shadow:inset 0 -2px 0 var(--green-9)}
   mark.hl.flash{animation:flash 1.1s ease}
   @keyframes flash{0%,100%{background:#FFE08A}40%{background:#ffd24d}}
+  /* glossary */
+  .gloss{border-bottom:1px dotted var(--teal-9);cursor:help;position:relative}
+  .gloss:hover::after,.gloss:focus::after{content:attr(data-def);position:absolute;left:0;top:1.5em;z-index:80;
+    width:max-content;max-width:280px;background:var(--slate-12);color:#fff;font-size:12px;font-weight:400;
+    line-height:1.4;padding:7px 10px;border-radius:6px;box-shadow:var(--shadow-3);white-space:normal}
+  #glossary{margin-top:32px;border-top:2px solid var(--slate-4);padding-top:8px}
   /* floating add button */
   #addBtn{position:fixed;z-index:50;display:none;background:var(--teal-9);color:#fff;border:none;
     font-family:var(--head);font-weight:600;font-size:13px;padding:7px 12px;border-radius:999px;
@@ -156,7 +162,42 @@
   var hideResChk = document.getElementById('hideRes');
 
   var state = { threads: [], hideResolved: false };
-  function buildGlossary(){}   // replaced in Task 6
+  function buildGlossary(){
+    // find a heading whose text is Словарь/Glossary, read its following <ul>
+    var heads = docEl.querySelectorAll('h2,h3'); var gHead=null;
+    for(var i=0;i<heads.length;i++){ var t=heads[i].textContent.trim().toLowerCase(); if(t==='словарь'||t==='glossary'){ gHead=heads[i]; break; } }
+    if(!gHead) return;
+    var list = gHead.nextElementSibling; if(!list || list.tagName!=='UL') return;
+    gHead.id='glossary';
+    var map=[];
+    list.querySelectorAll('li').forEach(function(li){
+      // expected shape: <strong>term</strong> — definition
+      var strong=li.querySelector('strong'); if(!strong) return;
+      var term=strong.textContent.trim();
+      var def=li.textContent.replace(strong.textContent,'').replace(/^[\s—:-]+/,'').trim();
+      if(term && def) map.push({term:term, def:def});
+    });
+    if(!map.length) return;
+    map.sort(function(a,b){ return b.term.length-a.term.length; }); // longest first
+    // wrap first occurrence of each term in body text nodes outside the glossary list, code, marks, existing gloss
+    map.forEach(function(entry){
+      var w=document.createTreeWalker(docEl,NodeFilter.SHOW_TEXT,{acceptNode:function(n){
+        if(!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        var p=n.parentNode;
+        while(p && p!==docEl){ var tag=p.tagName; if(tag==='CODE'||tag==='PRE'||tag==='A'||tag==='MARK'||p.classList&&p.classList.contains('gloss')) return NodeFilter.FILTER_REJECT; if(p===gHead||p===list) return NodeFilter.FILTER_REJECT; p=p.parentNode; }
+        return NodeFilter.FILTER_ACCEPT;
+      }});
+      var node;
+      while((node=w.nextNode())){
+        var idx=node.nodeValue.indexOf(entry.term);
+        if(idx<0) continue;
+        var range=document.createRange(); range.setStart(node,idx); range.setEnd(node,idx+entry.term.length);
+        var span=document.createElement('span'); span.className='gloss'; span.tabIndex=0; span.setAttribute('data-def',entry.def);
+        try{ range.surroundContents(span); }catch(e){ continue; }
+        break; // first occurrence only
+      }
+    });
+  }
   function buildToc(){}        // replaced in Task 8
   var currentAuthor = 'user';
   var replyTo = null;            // message id we are replying to

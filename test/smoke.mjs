@@ -56,6 +56,10 @@ try {
     ? ok('comment persisted to comments.json') : fail('comment not persisted');
   const mark = await page.locator('#doc mark.hl').count();
   mark >= 1 ? ok('highlight rendered in document') : fail('no highlight mark');
+  const glossCount = await page.locator('#doc .gloss').count();
+  glossCount >= 1 ? ok('glossary terms wrapped with tooltip spans') : fail('no .gloss spans');
+  const def = await page.locator('#doc .gloss').first().getAttribute('data-def');
+  def && def.length > 0 ? ok('glossary tooltip has a definition') : fail('gloss span missing data-def');
 } catch (e) {
   fail(e.message);
 } finally {
