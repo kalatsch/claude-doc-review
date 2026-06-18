@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-doc-review",
+  "description": "Human-friendly review page with inline comments for any markdown document Claude writes",
+  "owner": { "name": "kalatsch", "email": "kirill.kalatsch@gmail.com" },
+  "plugins": [
+    {
+      "name": "claude-doc-review",
+      "version": "0.1.0",
+      "description": "Turn a terse technical document into a human-friendly review page with glossary, collapsible detail, and an inline commenting layer that syncs live to Claude.",
+      "author": { "name": "kalatsch", "email": "kirill.kalatsch@gmail.com" },
+      "category": "productivity",
+      "source": "./"
+    }
+  ]
+}
