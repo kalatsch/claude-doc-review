@@ -68,6 +68,14 @@ try {
   await det.locator('summary').click();
   const bodyVisibleOpen = await det.locator('p').first().isVisible();
   bodyVisibleOpen ? ok('details expands on click') : fail('details did not expand');
+
+  const tocLinks = await page.locator('#toc a').count();
+  tocLinks >= 2 ? ok('TOC built from headings') : fail('TOC has <2 links: ' + tocLinks);
+  const counts = await page.locator('#bar-counts').textContent();
+  /откр\./.test(counts || '') ? ok('status bar shows open/resolved counts') : fail('counts missing: ' + counts);
+  await page.click('#themeBtn');
+  const dark = await page.evaluate(() => document.body.classList.contains('dark'));
+  dark ? ok('theme toggles to dark') : fail('dark theme did not toggle');
 } catch (e) {
   fail(e.message);
 } finally {

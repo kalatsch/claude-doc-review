@@ -109,11 +109,37 @@
   #doc details>summary::-webkit-details-marker{display:none}
   #doc details>summary::before{content:"▸ ";color:var(--teal-9)}
   #doc details[open]>summary::before{content:"▾ "}
+  /* status header + TOC + dark + print */
+  #bar{grid-column:1 / -1;display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--slate-1);
+    border-bottom:1px solid var(--slate-6);position:sticky;top:0;z-index:40;font-family:var(--head)}
+  #bar .spacer{flex:1}
+  #bar-title{font-weight:700}
+  #toc{position:sticky;top:52px;align-self:start;max-height:calc(100vh - 60px);overflow:auto;padding:12px 8px;font-size:13px}
+  #toc a{display:block;color:var(--slate-11);text-decoration:none;padding:2px 6px;border-radius:4px;border-left:2px solid transparent}
+  #toc a:hover{background:var(--slate-3)}
+  #toc a.lvl3{padding-left:18px;font-size:12px}
+  #toc a.active{color:var(--teal-10);border-left-color:var(--teal-9);font-weight:600}
+  .wrap.with-toc{grid-template-columns:200px minmax(0,1fr) 360px}
+  body.dark{--slate-1:#1a1c19;--slate-2:#141612;--slate-3:#22251f;--slate-4:#2c2f28;--slate-6:#3a3e36;--slate-8:#55594f;--slate-11:#b8bbb0;--slate-12:#f1f2ee}
+  body.dark pre{background:#000}
+  #toc{display:none}
+  .wrap.with-toc #toc{display:block}
+  @media print{#panel,#bar,#toc,#addBtn,#mobToggle{display:none!important}.wrap{display:block;max-width:none}#doc{box-shadow:none}}
 </style>
 <script src="./marked.min.js"></script>
 </head>
 <body>
 <div class="wrap">
+  <header id="bar">
+    <span id="bar-title">Doc Review</span>
+    <span id="bar-status" class="pill open">черновик</span>
+    <span class="spacer"></span>
+    <span id="bar-counts" class="cnt"></span>
+    <button class="lnk" id="nextOpen">↓ след. открытый</button>
+    <button class="lnk" id="themeBtn" title="Тема">🌓</button>
+    <button class="lnk" id="printBtn" title="Печать / PDF">🖨</button>
+  </header>
+  <nav id="toc"></nav>
   <!-- ===================== DOCUMENT ===================== -->
   <article id="doc"><p class="empty">Загрузка документа…</p></article>
 
@@ -203,7 +229,26 @@
       }
     });
   }
-  function buildToc(){}        // replaced in Task 8
+  function buildToc(){
+    var toc=document.getElementById('toc'); if(!toc) return;
+    var heads=docEl.querySelectorAll('h1,h2,h3');
+    if(heads.length<2){ toc.style.display='none'; return; }
+    document.querySelector('.wrap').classList.add('with-toc');
+    var html=''; var seen={};
+    heads.forEach(function(h,i){
+      var id=h.id || ('h'+i+'-'+h.textContent.trim().toLowerCase().replace(/[^a-zа-я0-9]+/g,'-').replace(/^-|-$/g,''));
+      if(seen[id]) id=id+'-'+i; seen[id]=1; h.id=id;
+      var lvl=h.tagName==='H3'?'lvl3':'';
+      html+='<a href="#'+id+'" class="'+lvl+'" data-id="'+id+'">'+esc(h.textContent)+'</a>';
+    });
+    toc.innerHTML=html;
+    toc.addEventListener('click', function(e){ var a=e.target.closest('a'); if(!a) return; e.preventDefault();
+      var el=document.getElementById(a.dataset.id); if(el) el.scrollIntoView({block:'start',behavior:'smooth'}); });
+    var links=toc.querySelectorAll('a');
+    var spy=function(){ var best=null,bestTop=-1e9; heads.forEach(function(h){ var top=h.getBoundingClientRect().top; if(top<120 && top>bestTop){ bestTop=top; best=h.id; } });
+      links.forEach(function(a){ a.classList.toggle('active', a.dataset.id===best); }); };
+    window.addEventListener('scroll', spy, {passive:true}); spy();
+  }
   var currentAuthor = 'user';
   var replyTo = null;            // message id we are replying to
   var lastRange = null;
@@ -358,6 +403,13 @@
     }
     threadsEl.innerHTML=html;
     renderHighlights();
+    updateBar();
+  }
+  function updateBar(){
+    var open=state.threads.filter(function(t){return t.status!=='resolved';}).length;
+    var total=state.threads.length;
+    var c=document.getElementById('bar-counts'); if(c) c.textContent=open+' откр. · '+(total-open)+' решено';
+    var st=document.getElementById('bar-status'); if(st){ st.textContent = open? ('на ревью · '+open) : (total? 'готово':'черновик'); st.className='pill '+(open?'open':'resolved'); }
   }
 
   // ---------- panel interactions ----------
@@ -406,6 +458,15 @@
   authorSel.addEventListener('change', function(){ currentAuthor=authorSel.value; });
   hideResChk.addEventListener('change', function(){ state.hideResolved=hideResChk.checked; render(); });
   document.getElementById('howBtn').addEventListener('click', function(){ var b=document.getElementById('howBox'); b.style.display=b.style.display==='none'?'block':'none'; });
+  document.getElementById('themeBtn').addEventListener('click', function(){ document.body.classList.toggle('dark'); try{ localStorage.setItem('docrev-theme', document.body.classList.contains('dark')?'dark':'light'); }catch(e){} });
+  if(localStorage.getItem('docrev-theme')==='dark') document.body.classList.add('dark');
+  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+  document.getElementById('nextOpen').addEventListener('click', function(){
+    var marks=docEl.querySelectorAll('mark.hl:not(.hl-resolved)'); if(!marks.length) return;
+    var y=window.scrollY+120, next=null;
+    for(var i=0;i<marks.length;i++){ var top=marks[i].getBoundingClientRect().top+window.scrollY; if(top>y+1){ next=marks[i]; break; } }
+    next=next||marks[0]; next.scrollIntoView({block:'center',behavior:'smooth'}); next.classList.add('flash'); setTimeout(function(){next.classList.remove('flash');},1100);
+  });
 
   document.getElementById('expBtn').addEventListener('click', function(){
     var data=JSON.stringify({version:1, exportedAt:new Date().toISOString(), threads:strip(state.threads)}, null, 2);
