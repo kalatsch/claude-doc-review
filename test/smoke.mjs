@@ -76,6 +76,11 @@ try {
   await page.click('#themeBtn');
   const dark = await page.evaluate(() => document.body.classList.contains('dark'));
   dark ? ok('theme toggles to dark') : fail('dark theme did not toggle');
+  const panelLum = await page.locator('#panel').evaluate(el => {
+    const m = getComputedStyle(el).backgroundColor.match(/\d+/g) || [255,255,255];
+    return (0.299*+m[0] + 0.587*+m[1] + 0.114*+m[2]) / 255; // perceived luminance 0..1
+  });
+  panelLum < 0.4 ? ok('dark theme darkens the comment panel') : fail('panel still light in dark mode: lum=' + panelLum.toFixed(2));
 } catch (e) {
   fail(e.message);
 } finally {

@@ -102,7 +102,7 @@
   .modal textarea{width:100%;height:200px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--slate-6);border-radius:6px;padding:8px}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--slate-12);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;z-index:200;opacity:0;transition:opacity .2s;font-family:var(--head)}
   .toast.show{opacity:1}
-  @media(max-width:1000px){.wrap{grid-template-columns:1fr}#panel{position:fixed;right:0;top:0;width:340px;z-index:60;transform:translateX(100%);transition:transform .2s;box-shadow:var(--shadow-3)}#panel.open{transform:none}#mobToggle{display:inline-block!important}}
+  @media(max-width:1000px){.wrap{grid-template-columns:1fr}#panel{position:fixed;right:0;top:0;width:340px;z-index:60;transform:translateX(100%);transition:transform .2s;box-shadow:var(--shadow-3)}#panel.open{transform:none}#mobToggle{display:inline-block!important}.wrap.with-toc{grid-template-columns:1fr!important}#toc{display:none!important}}
   #mobToggle{display:none;position:fixed;right:14px;bottom:14px;z-index:70}
   #doc details{background:var(--slate-2);border:1px solid var(--slate-6);border-radius:var(--radius);padding:8px 12px;margin:12px 0}
   #doc details>summary{cursor:pointer;font-family:var(--head);font-weight:600;color:var(--teal-10);list-style:none}
@@ -122,6 +122,12 @@
   .wrap.with-toc{grid-template-columns:200px minmax(0,1fr) 360px}
   body.dark{--slate-1:#1a1c19;--slate-2:#141612;--slate-3:#22251f;--slate-4:#2c2f28;--slate-6:#3a3e36;--slate-8:#55594f;--slate-11:#b8bbb0;--slate-12:#f1f2ee}
   body.dark pre{background:#000}
+  body.dark .thread{background:var(--slate-3)}
+  body.dark .thread.resolved{background:#1b241d}
+  body.dark select,body.dark .btn.ghost{background:var(--slate-3);color:var(--slate-12)}
+  body.dark .composer textarea,body.dark .modal textarea{background:var(--slate-1);color:var(--slate-12)}
+  body.dark .modal{background:var(--slate-2)}
+  body.dark .gloss:hover::after,body.dark .gloss:focus::after{background:var(--slate-3);color:var(--slate-12)}
   #toc{display:none}
   .wrap.with-toc #toc{display:block}
   @media print{#panel,#bar,#toc,#addBtn,#mobToggle{display:none!important}.wrap{display:block;max-width:none}#doc{box-shadow:none}}
