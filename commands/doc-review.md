@@ -1,7 +1,7 @@
 ---
 description: Render a markdown document as a human-friendly review page with glossary, collapsible detail, and an inline commenting layer that syncs to Claude
 argument-hint: "<path/to/document.md>"
-allowed-tools: Bash(node *), Bash(mkdir *), Bash(cp *), Bash(test *), Bash(echo *), Bash(open *), Bash(xdg-open *), Bash(lsof *), Read, Write
+allowed-tools: Bash(node *), Bash(mkdir *), Bash(cp *), Bash(test *), Bash(echo *), Read, Write
 ---
 
 # /doc-review
@@ -41,6 +41,11 @@ Read the source with the Read tool. Produce a human-facing rewrite. Rules:
 
 - End with a `## Словарь` section: `- **Term** — one-sentence definition.` for
   every term a non-author reader might not know. These power the page tooltips.
+  The `## Словарь` heading must be IMMEDIATELY followed by the bullet list — no
+  blank paragraph, intro sentence, or other element between them — because the
+  renderer attaches tooltips by reading the heading's immediate next sibling
+  `<ul>`. The `**Term**` bold is required: the renderer reads the `<strong>` to
+  pick up the term.
 - Do NOT add comment threads or page chrome — only the document content.
 
 Hold the rewritten markdown in memory for Step 4 (write it as `human.md`).
@@ -84,7 +89,24 @@ Output one line with the URL and the folder path. Nothing else.
 ## Step 6 — Answer comments (rest of the session)
 
 When the user says they left comments (or asks you to check), read
-`$DEST/comments.json`, answer each open thread whose latest message is from the
-user: append a `{author:"claude", …}` message, set the user message's handled
-state, and `resolved` only when the thread is settled. Write the file back. The
-browser polls and shows your replies within a few seconds.
+`$DEST/comments.json`. Its shape is `{ "version": 1, "threads": [ … ] }`. Each
+thread looks like `{ id, quote, start, end, status, createdAt, messages: [] }`,
+where `status` is `"open"` or `"resolved"`, and each message is
+`{ id, author, text, createdAt, children: [] }` with `author` either `"user"`
+or `"claude"`. Replies form a tree: a message's `children` array holds replies
+to it.
+
+For each thread whose `status !== "resolved"` and whose newest message has
+`author: "user"` (or which has no Claude reply yet), append a Claude reply:
+
+- A top-level reply is a new object pushed to that thread's `messages` array:
+  `{ "id": "<unique>", "author": "claude", "text": "<your answer, markdown ok>", "createdAt": <epoch-ms>, "children": [] }`.
+- To answer one specific message rather than the thread as a whole, push the
+  same object into that message's `children` array instead.
+
+Set the thread's `status` to `"resolved"` ONLY when the point is settled;
+otherwise leave it `"open"`. Do NOT invent extra per-message status fields —
+the model has no such concept; only the four message keys above plus thread
+`status` exist. Write the whole object back to
+`$DEST/comments.json` as valid JSON. The browser polls every few seconds and
+shows your reply.
