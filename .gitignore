@@ -2,3 +2,6 @@
 node_modules/
 test-results/
 package-lock.json
+
+# local /doc-review demo output
+/.claude/
