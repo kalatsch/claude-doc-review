@@ -76,11 +76,13 @@ tool (use the absolute path `<project>/.claude/info/<slug>/human.md`).
 
 ## Step 5 — Serve and report
 
-Start the server in the background and report the URL:
+Pick a free ephemeral port, start the server in the background on it, and report
+the ACTUAL bound URL:
 
 ```bash
-(cd "$DEST" && PORT=${PORT:-4178} node serve.js >/dev/null 2>&1 &) ; sleep 1
-echo "http://localhost:${PORT:-4178}/"
+PORT=$(node -e "const s=require('net').createServer();s.listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})")
+(cd "$DEST" && PORT=$PORT node serve.js >/dev/null 2>&1 &) ; sleep 1
+echo "http://localhost:$PORT/  ($DEST)"
 ```
 
 Tell the user: open the URL, select text to comment, Claude answers in threads.

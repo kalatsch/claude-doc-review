@@ -191,7 +191,7 @@
 <script>
 (function(){
   "use strict";
-  var STORE_KEY = 'screens-admin-plan-comments-v1';
+  var STORE_KEY = 'docrev-comments:' + (location.pathname || '/');
   var docEl = document.getElementById('doc');
   var threadsEl = document.getElementById('threads');
   var addBtn = document.getElementById('addBtn');

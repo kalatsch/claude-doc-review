@@ -57,7 +57,7 @@ const server = http.createServer((req, res) => {
   // ---- static files (within DIR only) ----
   let rel = u.pathname === '/' ? '/review.html' : decodeURIComponent(u.pathname);
   const fp = path.normalize(path.join(DIR, rel));
-  if (!fp.startsWith(DIR)) { res.writeHead(403); res.end('forbidden'); return; }
+  if (fp !== DIR && !fp.startsWith(DIR + path.sep)) { res.writeHead(403); res.end('forbidden'); return; }
   fs.readFile(fp, (err, buf) => {
     if (err) { res.writeHead(404); res.end('not found'); return; }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
@@ -66,7 +66,14 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log('План открыт:  http://localhost:' + PORT + '/');
+  console.log('Doc-review сервер:  http://localhost:' + PORT + '/');
   console.log('comments.json:', COMMENTS);
   console.log('Останов: Ctrl+C');
+});
+server.on('error', function (e) {
+  if (e && e.code === 'EADDRINUSE') {
+    console.error('Порт ' + PORT + ' занят — запустите с другим PORT (напр. PORT=4179 node serve.js).');
+    process.exit(1);
+  }
+  throw e;
 });
