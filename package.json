@@ -1,0 +1,12 @@
+{
+  "name": "claude-doc-review",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dev/test harness for the claude-doc-review plugin assets",
+  "scripts": {
+    "test": "node test/serve.test.mjs && node test/smoke.mjs && bash test/e2e.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.0"
+  }
+}

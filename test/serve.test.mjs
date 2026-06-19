@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, writeFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createServer } from 'node:net';
+function freePort(){ return new Promise(res=>{ const s=createServer(); s.listen(0,'127.0.0.1',()=>{ const p=s.address().port; s.close(()=>res(p)); }); }); }
 
 const dir = mkdtempSync(join(tmpdir(), 'docrev-'));
 cpSync(new URL('../assets/serve.js', import.meta.url), join(dir, 'serve.js'));
@@ -9,7 +11,7 @@ writeFileSync(join(dir, 'review.html'), '<!doctype html><title>ok</title>hello')
 writeFileSync(join(dir, 'human.md'), '# Title\n\nbody');
 writeFileSync(join(dir, 'comments.json'), '{"version":1,"threads":[]}');
 
-const PORT = 4319;
+const PORT = await freePort();
 const srv = spawn(process.execPath, ['serve.js'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
 await new Promise(r => setTimeout(r, 500));
 

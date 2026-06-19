@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, writeFileSync, cpSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createServer } from 'node:net';
+function freePort(){ return new Promise(res=>{ const s=createServer(); s.listen(0,'127.0.0.1',()=>{ const p=s.address().port; s.close(()=>res(p)); }); }); }
 
 const root = new URL('..', import.meta.url);
 const dir = mkdtempSync(join(tmpdir(), 'docrev-smoke-'));
@@ -10,7 +12,7 @@ for (const f of ['serve.js', 'review.html', 'marked.min.js']) cpSync(new URL('as
 writeFileSync(join(dir, 'human.md'), readFileSync(new URL('test/fixtures/sample-technical.md', root)));
 writeFileSync(join(dir, 'comments.json'), '{"version":1,"threads":[]}');
 
-const PORT = 4321;
+const PORT = await freePort();
 const srv = spawn(process.execPath, ['serve.js'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
 await new Promise(r => setTimeout(r, 600));
 
@@ -50,8 +52,13 @@ try {
   // type a message and send, then confirm it persisted to comments.json via the server
   await page.fill('#threads .thread textarea', 'Это понятно?');
   await page.click('#threads .thread [data-act="send"]');
-  await page.waitForTimeout(700); // debounce + POST
-  const saved = JSON.parse(readFileSync(join(dir, 'comments.json'), 'utf8'));
+  // poll comments.json until the message lands (replaces fixed sleep)
+  let saved = { threads: [] };
+  for (let i = 0; i < 30; i++) {
+    try { saved = JSON.parse(readFileSync(join(dir, 'comments.json'), 'utf8')); } catch {}
+    if (saved.threads[0] && saved.threads[0].messages?.some(m => m.text === 'Это понятно?')) break;
+    await page.waitForTimeout(100);
+  }
   (saved.threads[0] && saved.threads[0].messages.some(m => m.text === 'Это понятно?'))
     ? ok('comment persisted to comments.json') : fail('comment not persisted');
   const mark = await page.locator('#doc mark.hl').count();

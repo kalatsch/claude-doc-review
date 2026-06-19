@@ -15,3 +15,19 @@ Artifacts are written to `<project>/.claude/info/<slug>/` and served locally.
 Select text on the page to leave a comment; Claude answers in the thread.
 
 See `docs/specs/` for the design and `docs/plans/` for the implementation plan.
+
+## Development
+
+```bash
+npm install            # installs playwright (devDependency)
+npx playwright install chromium
+npm test               # serve API + browser smoke + e2e
+```
+
+## How it works
+
+`/doc-review <file.md>` humanizes the file into `human.md` (clear prose +
+`## Словарь` + collapsible `<details>`), copies `review.html`, `serve.js`,
+`marked.min.js` into `<project>/.claude/info/<slug>/`, writes `source.md` and an
+empty `comments.json`, and serves the folder. `review.html` renders `human.md`
+and overlays the commenting engine; comments round-trip through `comments.json`.
