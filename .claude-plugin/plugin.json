@@ -1,6 +1,6 @@
 {
   "name": "claude-doc-review",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Turn a terse technical document Claude wrote for itself into a human-friendly review page: clear prose, glossary tooltips, collapsible technical detail, and an inline text-selection commenting layer that syncs live to Claude through a tiny local server. No cloud, no accounts, no telemetry.",
   "author": {
     "name": "kalatsch",
