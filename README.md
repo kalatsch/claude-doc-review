@@ -6,6 +6,8 @@ collapsible technical detail — with an inline text-selection commenting layer
 that syncs live to Claude through a tiny local server. No cloud, no accounts,
 no telemetry — everything runs on your machine.
 
+![screenshot](docs/screenshot.png)
+
 ## Install
 
 Inside Claude Code, add this GitHub repo as a plugin source and install from it
