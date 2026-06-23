@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claude-doc-review — install</title>
+<style>
+  :root {
+    --paper:#fcfcfd; --app-bg:#f1f1f5; --surface:#f5f5f9;
+    --ink:#1b1924; --ink-2:#3d3a4a; --muted:#7c7a8a;
+    --line:#ececf2; --accent:#6d5cff; --accent-soft:#efecff;
+    --green:#16a34a; --radius:14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; padding:60px 24px 90px;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    background:
+      radial-gradient(ellipse 900px 480px at 22% -240px, rgba(109,92,255,0.10), transparent),
+      radial-gradient(ellipse 700px 360px at 95% -80px, rgba(109,92,255,0.06), transparent),
+      var(--app-bg);
+    color:var(--ink); min-height:100vh; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:740px; margin:0 auto; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  header { margin-bottom:40px; }
+  .dots { display:flex; gap:6px; margin-bottom:22px; }
+  .dots i { width:15px; height:15px; border-radius:5px; display:block; }
+  h1 { font-size:36px; font-weight:800; letter-spacing:-0.025em; margin:0 0 12px; }
+  h1 .mono { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-weight:750; }
+  .tagline { color:var(--ink-2); font-size:17px; max-width:620px; margin:0; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }
+  .pill {
+    font-size:12.5px; padding:5px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--paper); color:var(--muted);
+    white-space:nowrap;
+  }
+  .pill b { color:var(--ink); font-weight:650; }
+  .pill.accent { border-color:rgba(109,92,255,0.4); color:var(--accent); background:var(--accent-soft); }
+
+  .section-label {
+    font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--muted); margin:36px 0 14px;
+  }
+
+  .card {
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 24px; box-shadow:0 1px 2px rgba(27,25,36,0.04);
+  }
+  .card.recommended { border-color:rgba(109,92,255,0.35); box-shadow:0 6px 28px rgba(109,92,255,0.10); }
+  .card h2 { font-size:18px; margin:0 0 6px; font-weight:700; }
+  .desc { color:var(--ink-2); margin:0 0 18px; font-size:14.5px; }
+  .desc.nopad { margin-bottom:14px; }
+
+  .substep { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--ink-2); margin:16px 0 8px; font-weight:600; }
+  .substep i {
+    width:22px; height:22px; border-radius:50%; background:var(--accent-soft); color:var(--accent);
+    font-style:normal; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .code {
+    position:relative; font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:13.5px;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:13px 90px 13px 15px; color:var(--ink); word-break:break-all;
+  }
+  .code .p { color:var(--accent); font-weight:650; }
+  .copy {
+    position:absolute; top:8px; right:8px; font:inherit; font-size:12px;
+    border:1px solid var(--line); background:var(--paper); color:var(--muted);
+    border-radius:7px; padding:5px 11px; cursor:pointer; transition:all .15s;
+  }
+  .copy:hover { color:var(--ink); border-color:var(--muted); }
+  .copy.done { color:#fff; background:var(--green); border-color:var(--green); }
+
+  .note {
+    display:flex; gap:11px; align-items:flex-start; margin:18px 2px 0;
+    font-size:13.5px; color:var(--ink-2);
+  }
+  .note .ico { color:var(--accent); font-size:16px; line-height:1.5; flex:0 0 auto; }
+  code { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:0.88em; background:var(--surface); border:1px solid var(--line); border-radius:5px; padding:1px 5px; }
+
+  .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:560px){ .mini-grid { grid-template-columns:1fr; } }
+  .mini { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; }
+  .mini h3 { font-size:14px; margin:0 0 10px; font-weight:700; }
+  .mini ul { margin:0; padding-left:18px; }
+  .mini li { font-size:13.5px; color:var(--ink-2); margin:6px 0; }
+
+  footer {
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;
+    margin-top:46px; padding-top:22px; border-top:1px solid var(--line);
+    font-size:13px; color:var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="dots" aria-hidden="true">
+      <i style="background:var(--accent)"></i>
+      <i style="background:var(--accent);opacity:0.55"></i>
+      <i style="background:#fde047"></i>
+      <i style="background:var(--green)"></i>
+      <i style="background:var(--line)"></i>
+    </div>
+    <h1><span class="mono">claude-doc-review</span></h1>
+    <p class="tagline">Turn any markdown document Claude writes into a human-friendly review page —
+      clear prose, glossary tooltips, collapsible technical detail — with an inline text-selection
+      commenting layer that syncs live to Claude. No cloud, no accounts, no telemetry.</p>
+    <div class="pills">
+      <span class="pill accent"><b>/doc-review</b></span>
+      <span class="pill">inline comments &amp; replies</span>
+      <span class="pill">glossary tooltips</span>
+      <span class="pill">collapsible detail</span>
+      <span class="pill">light / dark</span>
+      <span class="pill">100% local</span>
+    </div>
+  </header>
+
+  <div class="section-label">Install</div>
+
+  <div class="card recommended">
+    <div class="card-head"><h2>Install from this repo</h2></div>
+    <p class="desc nopad">Inside Claude&nbsp;Code — no central publishing involved. These are two separate
+      slash commands: run them <b>one at a time, in order</b>.</p>
+    <div class="substep"><i>1</i>Add this GitHub repo as a plugin source</div>
+    <div class="code"><button class="copy">Copy</button><span class="p">/plugin</span> marketplace add kalatsch/claude-doc-review</div>
+    <div class="substep"><i>2</i>Install the plugin from it</div>
+    <div class="code"><button class="copy">Copy</button><span class="p">/plugin</span> install claude-doc-review@claude-doc-review</div>
+  </div>
+
+  <p class="note"><span class="ico">↻</span><span><b>Updating later?</b> No commands needed — open the built-in
+    <code>/plugin</code> menu, go to <b>Manage&nbsp;plugins → claude-doc-review → Update</b>. (Restart the
+    window, or run <code>/reload-plugins</code>, to load the new version into the current session.)</span></p>
+
+  <div class="section-label">After install</div>
+  <div class="mini-grid">
+    <div class="mini">
+      <h3>Usage</h3>
+      <ul>
+        <li><code>/doc-review path/to/doc.md</code> — humanize, serve &amp; open</li>
+        <li>Select text on the page → leave a comment</li>
+        <li>Claude answers right in the thread</li>
+        <li>Resolve threads when settled</li>
+      </ul>
+    </div>
+    <div class="mini">
+      <h3>What it does</h3>
+      <ul>
+        <li>Rewrites the doc into plain prose + a <b>Словарь</b> glossary</li>
+        <li>Deep detail folds into collapsible blocks</li>
+        <li>Output lands in <code>.claude/doc-review/&lt;slug&gt;/</code></li>
+        <li>Auto-ignored from your project's git</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    <span>100% local · MIT licensed</span>
+    <a href="https://github.com/kalatsch/claude-doc-review">github.com/kalatsch/claude-doc-review ↗</a>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".copy").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const block = btn.parentElement.cloneNode(true);
+      block.querySelector(".copy")?.remove();
+      const text = block.textContent.replace(/ /g, " ").trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const old = btn.textContent;
+        btn.textContent = "Copied";
+        btn.classList.add("done");
+        setTimeout(() => { btn.textContent = old; btn.classList.remove("done"); }, 1400);
+      });
+    });
+  });
+</script>
+</body>
+</html>
