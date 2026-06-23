@@ -6,13 +6,18 @@ import { createServer } from 'node:net';
 function freePort(){ return new Promise(res=>{ const s=createServer(); s.listen(0,'127.0.0.1',()=>{ const p=s.address().port; s.close(()=>res(p)); }); }); }
 
 const dir = mkdtempSync(join(tmpdir(), 'docrev-'));
-cpSync(new URL('../assets/serve.js', import.meta.url), join(dir, 'serve.js'));
+cpSync(new URL('../assets/serve.cjs', import.meta.url), join(dir, 'serve.cjs'));
 writeFileSync(join(dir, 'review.html'), '<!doctype html><title>ok</title>hello');
 writeFileSync(join(dir, 'human.md'), '# Title\n\nbody');
 writeFileSync(join(dir, 'comments.json'), '{"version":1,"threads":[]}');
+// Regression: a host project with "type":"module" must NOT break the server.
+// A .js file would be parsed as ESM here and crash on require(); .cjs stays CommonJS.
+writeFileSync(join(dir, 'package.json'), '{"type":"module"}');
 
 const PORT = await freePort();
-const srv = spawn(process.execPath, ['serve.js'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
+const srv = spawn(process.execPath, ['serve.cjs'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
+let srvErr = '';
+srv.stderr.on('data', (d) => { srvErr += d; });
 await new Promise(r => setTimeout(r, 500));
 
 let failed = false;
@@ -20,6 +25,8 @@ const base = `http://localhost:${PORT}`;
 function assert(cond, msg) { if (!cond) { failed = true; console.error('FAIL:', msg); } else { console.log('ok:', msg); } }
 
 try {
+  assert(!/require is not defined|ERR_REQUIRE_ESM/.test(srvErr), 'serve.cjs starts under a "type":"module" project (no ESM crash)');
+
   const root = await fetch(base + '/');
   assert(root.ok && (await root.text()).includes('hello'), 'GET / serves review.html');
 

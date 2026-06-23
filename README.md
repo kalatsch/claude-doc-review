@@ -27,7 +27,10 @@ npm test               # serve API + browser smoke + e2e
 ## How it works
 
 `/doc-review <file.md>` humanizes the file into `human.md` (clear prose +
-`## Словарь` + collapsible `<details>`), copies `review.html`, `serve.js`,
-`marked.min.js` into `<project>/.claude/info/<slug>/`, writes `source.md` and an
-empty `comments.json`, and serves the folder. `review.html` renders `human.md`
-and overlays the commenting engine; comments round-trip through `comments.json`.
+`## Словарь` + collapsible `<details>`), copies `review.html`, `serve.cjs`,
+`marked.min.js` into `<project>/.claude/doc-review/<slug>/`, writes `source.md`
+and an empty `comments.json`, and serves the folder. The output lives under
+`.claude/doc-review/`, which the command keeps out of the host project's git via
+a self-contained `.gitignore`. The server is `serve.cjs` (CommonJS regardless of
+the host project's `package.json` `type`). `review.html` renders `human.md` and
+overlays the commenting engine; comments round-trip through `comments.json`.

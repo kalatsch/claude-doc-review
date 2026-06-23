@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Крошечный локальный сервер для review.html: статика + чтение/запись comments.json.
-// Запуск:  node serve.js   →   http://localhost:4178/
+// Расширение .cjs — чтобы Node всегда трактовал файл как CommonJS, даже если в
+// package.json проекта стоит "type":"module". Запуск:  node serve.cjs
 'use strict';
 const http = require('http');
 const fs = require('fs');

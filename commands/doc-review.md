@@ -1,7 +1,7 @@
 ---
 description: Render a markdown document as a human-friendly review page with glossary, collapsible detail, and an inline commenting layer that syncs to Claude
 argument-hint: "<path/to/document.md>"
-allowed-tools: Bash(node *), Bash(mkdir *), Bash(cp *), Bash(test *), Bash(echo *), Read, Write
+allowed-tools: Bash(node *), Bash(mkdir *), Bash(cp *), Bash(test *), Bash(echo *), Bash(open *), Bash(xdg-open *), Read, Write
 ---
 
 # /doc-review
@@ -50,12 +50,21 @@ Read the source with the Read tool. Produce a human-facing rewrite. Rules:
 
 Hold the rewritten markdown in memory for Step 4 (write it as `human.md`).
 
-## Step 3 — Compute slug and target folder
+## Step 3 — Compute slug and target folder (and keep it out of git)
+
+Output goes into a dedicated `.claude/doc-review/` folder, one subfolder per
+document. Drop a self-contained `.gitignore` (`*`) at the root of that folder so
+the generated artifacts (copied assets, `human.md`, `comments.json`) never get
+committed into the user's project — this does NOT touch the project's own
+top-level `.gitignore`. The `.gitignore` write is idempotent.
 
 ```bash
 SLUG=$(basename "$ARGUMENTS" .md | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-//; s/-$//')
-DEST=".claude/info/$SLUG"
+ROOT=".claude/doc-review"
+DEST="$ROOT/$SLUG"
 mkdir -p "$DEST"
+# ignore the whole doc-review folder from the host project's git
+printf '%s\n' '*' > "$ROOT/.gitignore"
 echo "DEST=$DEST"
 ```
 
@@ -64,8 +73,8 @@ echo "DEST=$DEST"
 Copy the three assets from the plugin and write the documents:
 
 ```bash
-cp "${CLAUDE_PLUGIN_ROOT}/assets/review.html" "$DEST/review.html"
-cp "${CLAUDE_PLUGIN_ROOT}/assets/serve.js"     "$DEST/serve.js"
+cp "${CLAUDE_PLUGIN_ROOT}/assets/review.html"  "$DEST/review.html"
+cp "${CLAUDE_PLUGIN_ROOT}/assets/serve.cjs"     "$DEST/serve.cjs"
 cp "${CLAUDE_PLUGIN_ROOT}/assets/marked.min.js" "$DEST/marked.min.js"
 cp "$ARGUMENTS" "$DEST/source.md"
 test -f "$DEST/comments.json" || echo '{"version":1,"threads":[]}' > "$DEST/comments.json"
@@ -81,12 +90,16 @@ the ACTUAL bound URL:
 
 ```bash
 PORT=$(node -e "const s=require('net').createServer();s.listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})")
-(cd "$DEST" && PORT=$PORT node serve.js >/dev/null 2>&1 &) ; sleep 1
-echo "http://localhost:$PORT/  ($DEST)"
+(cd "$DEST" && PORT=$PORT nohup node serve.cjs >/dev/null 2>&1 </dev/null &) ; sleep 1
+URL="http://localhost:$PORT/"
+open "$URL" 2>/dev/null || xdg-open "$URL" 2>/dev/null || true   # открыть в системном браузере (не Simple Browser VSCode)
+echo "$URL  ($DEST)"
 ```
 
-Tell the user: open the URL, select text to comment, Claude answers in threads.
-Output one line with the URL and the folder path. Nothing else.
+The `open`/`xdg-open` line launches the page in the user's default external
+browser (so it does not open inside VSCode's Simple Browser). Tell the user:
+select text to comment, Claude answers in threads. Output one line with the URL
+and the folder path. Nothing else.
 
 ## Step 6 — Answer comments (rest of the session)
 

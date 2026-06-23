@@ -8,12 +8,12 @@ function freePort(){ return new Promise(res=>{ const s=createServer(); s.listen(
 
 const root = new URL('..', import.meta.url);
 const dir = mkdtempSync(join(tmpdir(), 'docrev-smoke-'));
-for (const f of ['serve.js', 'review.html', 'marked.min.js']) cpSync(new URL('assets/' + f, root), join(dir, f));
+for (const f of ['serve.cjs', 'review.html', 'marked.min.js']) cpSync(new URL('assets/' + f, root), join(dir, f));
 writeFileSync(join(dir, 'human.md'), readFileSync(new URL('test/fixtures/sample-technical.md', root)));
 writeFileSync(join(dir, 'comments.json'), '{"version":1,"threads":[]}');
 
 const PORT = await freePort();
-const srv = spawn(process.execPath, ['serve.js'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
+const srv = spawn(process.execPath, ['serve.cjs'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
 await new Promise(r => setTimeout(r, 600));
 
 let failed = false;
@@ -79,7 +79,7 @@ try {
   const tocLinks = await page.locator('#toc a').count();
   tocLinks >= 2 ? ok('TOC built from headings') : fail('TOC has <2 links: ' + tocLinks);
   const counts = await page.locator('#bar-counts').textContent();
-  /откр\./.test(counts || '') ? ok('status bar shows open/resolved counts') : fail('counts missing: ' + counts);
+  /\d+ из \d+/.test(counts || '') ? ok('status bar shows open/total counts') : fail('counts missing: ' + counts);
   await page.click('#themeBtn');
   const dark = await page.evaluate(() => document.body.classList.contains('dark'));
   dark ? ok('theme toggles to dark') : fail('dark theme did not toggle');
