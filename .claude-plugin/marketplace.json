@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "claude-doc-review",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "description": "Turn a terse technical document into a human-friendly review page with glossary, collapsible detail, and an inline commenting layer that syncs live to Claude.",
       "author": { "name": "kalatsch", "email": "kirill.kalatsch@gmail.com" },
       "category": "productivity",
