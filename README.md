@@ -31,11 +31,17 @@ document becomes a back-and-forth review surface instead of a wall of text.
 - **Collapsible detail** — genuinely deep asides (data models, edge cases) fold
   into `<details>` blocks, keeping the main read light; expand on demand.
 - **Inline text-selection comments** — select any text on the page to drop a
-  comment anchored to that exact quote (highlighted in the document). Threads
-  support **replies** and **resolve**.
+  comment anchored to that exact quote (highlighted in the document). Each thread
+  is an **ongoing back-and-forth**, not a one-shot: reply as many rounds as you
+  need, with nested replies, and Claude answers every open thread that has a new
+  message from you.
 - **Two-way sync with Claude** — comments persist to a `comments.json` file that
   Claude reads and writes; the page polls and shows Claude's replies **live**, with
-  no copy-paste between the doc and the chat.
+  no copy-paste between the doc and the chat. Claude answers every **open** thread;
+  it does not touch resolved ones.
+- **Resolve & reopen** — close a thread once the point is settled: Claude stops
+  answering it and its comment box disappears. **Reopen** it (the ↺ button) to pick
+  the discussion back up.
 - **Navigation** — table of contents with scroll-spy, next/previous open-comment
   jumps, and click-to-locate (clicking a comment scrolls to its highlight — and
   opens a collapsed block if the quote lives inside one).
@@ -74,11 +80,14 @@ Claude humanizes the file, lays the review page down next to it, starts a local
 server, and opens it in your browser. Then:
 
 1. **Read** the rewritten document; hover glossary terms, expand detail blocks.
-2. **Select** any text and click the floating button to leave a comment; reply
-   within a thread as needed.
-3. Ask Claude to **check the comments** — it reads them and answers in each
-   thread; the page updates live.
-4. **Resolve** a thread once the point is settled.
+2. **Select** any text and click the floating button to leave a comment. Keep the
+   conversation going inside the thread — reply as many rounds as you need.
+3. Ask Claude to **check the comments** — it answers every open thread that has a
+   new message from you; the page updates live. Repeat as long as you want; the
+   discussion isn't one-shot.
+4. **Resolve** a thread when it's settled — Claude then leaves it alone. **Reopen**
+   it later if you need to continue (resolved threads have no comment box until
+   you do).
 
 ## How it works
 
