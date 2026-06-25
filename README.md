@@ -6,7 +6,7 @@ read and comment on, with your comments syncing straight back to Claude. No
 cloud, no accounts, no telemetry: it's a single local HTML file and a tiny
 local server, all on your machine.
 
-![screenshot](docs/screenshot.png)
+![screenshot](docs/screenshot_light.png)
 
 ## Why
 

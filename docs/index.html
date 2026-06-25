@@ -165,6 +165,9 @@
   .lede b { color: var(--text); font-weight: 600; }
   .lede code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px; color: var(--accent-2); background: var(--panel-2); padding: 1px 6px; border-radius: 5px; }
 
+  /* ---- product screenshot ---- */
+  .shot { width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 12px; margin: 24px 0 4px; box-shadow: 0 14px 36px rgba(0,0,0,0.45); }
+
   /* ---- feature grid ---- */
   .features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
@@ -231,6 +234,8 @@
     the document into plain prose, explains every term, folds the deep detail away, and lets you
     <b>select any sentence and comment</b> — which Claude reads and answers in place. The doc becomes a
     back-and-forth review surface instead of a wall of text.</p>
+
+  <img class="shot" src="screenshot_dark.png" alt="A document rendered by claude-doc-review: table of contents, prose with glossary highlights, and a live comment thread.">
 
   <div class="section-label">What you get</div>
   <div class="features">
