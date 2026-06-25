@@ -62,9 +62,9 @@ them one at a time, in order (the install needs the source added first):
 /plugin install claude-doc-review@claude-doc-review
 ```
 
-To update later, use the built-in `/plugin` menu → **Manage plugins →
-claude-doc-review → Update** (then restart the window or run `/reload-plugins`
-to load it into the current session).
+To update later, open the `/plugin` menu → **Installed** tab → select
+**claude-doc-review** → **Update now** (then restart the window or run
+`/reload-plugins` to load it into the current session).
 
 > Sharing with teammates? Send them the install page —
 > **<https://kalatsch.github.io/claude-doc-review/>** (served from
