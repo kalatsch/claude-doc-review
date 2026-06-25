@@ -160,6 +160,37 @@
     margin: 34px 0 14px;
   }
 
+  /* ---- lede / why ---- */
+  .lede { color: var(--text-dim); font-size: 15px; line-height: 1.65; max-width: 660px; margin: 0 0 4px; }
+  .lede b { color: var(--text); font-weight: 600; }
+  .lede code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px; color: var(--accent-2); background: var(--panel-2); padding: 1px 6px; border-radius: 5px; }
+
+  /* ---- feature grid ---- */
+  .features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+  .feature { background: var(--panel); border: 1px solid var(--border-soft); border-radius: 12px; padding: 15px 16px; }
+  .feature h3 { margin: 0 0 5px; font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 9px; }
+  .feature h3 .d { width: 8px; height: 8px; border-radius: 3px; background: var(--accent); flex: none; }
+  .feature p { margin: 0; font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .feature b { color: var(--text); font-weight: 600; }
+  .feature code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--text); background: var(--panel-2); padding: 1px 5px; border-radius: 5px; }
+
+  /* ---- numbered steps ---- */
+  .steps { counter-reset: s; margin: 0; padding: 0; list-style: none; }
+  .steps li { position: relative; padding: 0 0 18px 40px; color: var(--text-dim); font-size: 14px; line-height: 1.55; }
+  .steps li:last-child { padding-bottom: 0; }
+  .steps li::before {
+    counter-increment: s; content: counter(s);
+    position: absolute; left: 0; top: -2px;
+    width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+    font-size: 13px; font-weight: 700;
+    background: rgba(145,130,255,0.16); border: 1px solid rgba(145,130,255,0.4); color: var(--accent-2);
+  }
+  .steps li::after { content: ""; position: absolute; left: 13px; top: 30px; bottom: 4px; width: 1px; background: var(--border); }
+  .steps li:last-child::after { display: none; }
+  .steps b { color: var(--text); font-weight: 600; }
+  .steps code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--text); background: var(--panel-2); padding: 1px 5px; border-radius: 5px; }
+
   footer {
     margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border-soft);
     color: var(--text-faint); font-size: 13px;
@@ -194,6 +225,51 @@
       <span class="pill">100% local</span>
     </div>
   </header>
+
+  <p class="lede">When Claude writes a plan or spec, it writes it <i>for itself</i> — dense, full of
+    acronyms and shorthand. Reviewing that in a chat scrollback is painful. <b>/doc-review</b> rewrites
+    the document into plain prose, explains every term, folds the deep detail away, and lets you
+    <b>select any sentence and comment</b> — which Claude reads and answers in place. The doc becomes a
+    back-and-forth review surface instead of a wall of text.</p>
+
+  <div class="section-label">What you get</div>
+  <div class="features">
+    <div class="feature">
+      <h3><span class="d"></span>Humanized rewrite</h3>
+      <p>Claude rephrases the terse source into clear prose, expanding jargon and acronyms on first use.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="d"></span>Glossary tooltips</h3>
+      <p>A <b>Словарь</b> / glossary section becomes hover tooltips on every term — case-insensitive, inflection-aware.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="d"></span>Collapsible detail</h3>
+      <p>Deep asides — data models, edge cases — fold into expandable blocks so the main read stays light.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="d"></span>Inline comments</h3>
+      <p>Select any text to drop a thread anchored to that quote. Replies and resolve included.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="d"></span>Live sync with Claude</h3>
+      <p>Comments round-trip through a local <code>comments.json</code>; Claude answers in-thread and the page updates live.</p>
+    </div>
+    <div class="feature">
+      <h3><span class="d"></span>Navigate &amp; track</h3>
+      <p>TOC with scroll-spy, next/prev comment jumps, open/total counts, light &amp; dark — all 100% local.</p>
+    </div>
+  </div>
+
+  <div class="section-label">How it works</div>
+  <ol class="steps">
+    <li>Run <code>/doc-review path/to/doc.md</code> on any markdown Claude wrote — a plan, a spec, a design note.</li>
+    <li>Claude <b>rewrites</b> it into clear prose with a glossary and collapsible detail, and lays the page
+      down in <code>.claude/doc-review/&lt;slug&gt;/</code> (kept out of your project's git automatically).</li>
+    <li>A tiny dependency-free local server starts and the page <b>opens in your browser</b> — read it,
+      hover the glossary terms, expand the detail blocks.</li>
+    <li><b>Select text → comment.</b> Ask Claude to check; it answers in each thread and the page updates
+      live. Resolve a thread once the point is settled.</li>
+  </ol>
 
   <div class="section-label">Install</div>
 
@@ -230,28 +306,6 @@
     shipped? The catalog is stale — in <code>/plugin</code> → <b>Marketplaces</b>, update this marketplace,
     then <b>Update&nbsp;now</b> again. Prefer the terminal? <code>claude plugin update
     claude-doc-review@claude-doc-review</code> does the same.</span></p>
-
-  <div class="section-label">After install</div>
-  <div class="mini-grid">
-    <div class="mini">
-      <h3>Usage</h3>
-      <ul>
-        <li><code>/doc-review path/to/doc.md</code> — humanize, serve &amp; open</li>
-        <li>Select text on the page → leave a comment</li>
-        <li>Claude answers right in the thread</li>
-        <li>Resolve threads when settled</li>
-      </ul>
-    </div>
-    <div class="mini">
-      <h3>What it does</h3>
-      <ul>
-        <li>Rewrites the doc into plain prose + a <b>Словарь</b> glossary</li>
-        <li>Deep detail folds into collapsible blocks</li>
-        <li>Output lands in <code>.claude/doc-review/&lt;slug&gt;/</code></li>
-        <li>Auto-ignored from your project's git</li>
-      </ul>
-    </div>
-  </div>
 
   <footer>
     <span>100% local · MIT licensed</span>
