@@ -126,7 +126,13 @@
   .who{font-family:var(--head);font-weight:700;font-size:12px;color:var(--ink)}
   .msg.claude .who{color:var(--plum-9)}
   .msg.user .who{color:var(--accent)}
-  .msg-b{font-size:14px;margin:3px 0 5px;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+  .msg-b{font-size:14px;margin:3px 0 5px;word-break:break-word;line-height:1.55}
+  .msg-b>:first-child{margin-top:0}
+  .msg-b>:last-child{margin-bottom:0}
+  .msg-b p{margin:0 0 .5em}
+  .msg-b ul,.msg-b ol{margin:.4em 0;padding-left:1.3em}
+  .msg-b li{margin:.12em 0}
+  .msg-b h1,.msg-b h2,.msg-b h3,.msg-b h4{font-size:14px;font-weight:700;margin:.6em 0 .2em}
   .composer{margin-top:8px}
   .composer textarea{width:100%;min-height:54px;resize:vertical;font-family:var(--body);font-size:14px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;line-height:1.5}
   .composer textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
@@ -432,7 +438,7 @@
       +'<div class="msg-h"><span class="who">'+(m.author==='claude'?'Claude':'Я')+'</span><span>'+fmt(m.createdAt)+'</span>'
       +'<span style="flex:1"></span>'
       +'<button class="icon-btn sm danger" data-act="delmsg" data-tid="'+t.id+'" data-mid="'+m.id+'" title="Удалить сообщение"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button></div>'
-      +'<div class="msg-b">'+esc(m.text)+'</div></div>';
+      +'<div class="msg-b">'+mdMsg(m.text)+'</div></div>';
     if(replyTo===m.id){ h+=composerHtml(t.id,m.id); }
     (m.children||[]).forEach(function(c){ h+=msgHtml(t,c,depth+1); });
     return h;
@@ -595,6 +601,16 @@
   function mdToHtml(md){
     try { return (window.marked && (window.marked.parse ? window.marked.parse(md) : window.marked(md))) || ''; }
     catch(e){ return '<pre>'+esc(md)+'</pre>'; }
+  }
+  // Comment bodies: render markdown too (bold, code, lists, links). breaks:true so a
+  // single newline becomes <br>, matching how the text was authored.
+  function mdMsg(t){
+    var s=(t==null?'':String(t));
+    try {
+      if(window.marked && window.marked.parse) return window.marked.parse(s,{breaks:true,gfm:true}) || '';
+      if(window.marked) return window.marked(s,{breaks:true,gfm:true}) || '';
+    } catch(e){}
+    return esc(s);
   }
   function renderDoc(md){
     docEl.innerHTML = mdToHtml(md);
