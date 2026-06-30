@@ -66,10 +66,15 @@
   mark.hl.flash{animation:flash 1.5s ease-out}
   @keyframes flash{0%{background:var(--hl);box-shadow:inset 0 -2px 0 var(--hl-bar),0 0 0 0 var(--accent-soft)}9%{background:var(--hl-strong);box-shadow:inset 0 -2px 0 var(--hl-bar),0 0 0 4px var(--accent-soft)}100%{background:var(--hl);box-shadow:inset 0 -2px 0 var(--hl-bar),0 0 0 0 var(--accent-soft)}}
   /* glossary */
-  .gloss{border-bottom:1px dotted var(--accent);cursor:help;position:relative;color:inherit}
-  .gloss:hover::after,.gloss:focus::after{content:attr(data-def);position:absolute;left:0;top:1.5em;z-index:80;
-    width:max-content;max-width:280px;background:var(--ink);color:#fff;font-size:13px;font-weight:400;
-    line-height:1.5;padding:9px 12px;border-radius:var(--radius);box-shadow:var(--shadow-3);white-space:normal}
+  .gloss{border-bottom:1px dotted var(--accent);cursor:help;color:inherit}
+  /* Floating glossary tooltip: position:fixed so it escapes table/`overflow:hidden`
+     clipping, and JS places it against the term's real rect (no fixed em offset that
+     would collide with large-font headings). */
+  #gloss-tip{position:fixed;left:0;top:0;z-index:200;max-width:min(320px,calc(100vw - 24px));
+    background:var(--ink);color:#fff;font-size:13px;font-weight:400;line-height:1.5;
+    padding:9px 12px;border-radius:var(--radius);box-shadow:var(--shadow-3);white-space:normal;
+    pointer-events:none;opacity:0;visibility:hidden;transition:opacity .12s}
+  #gloss-tip.show{opacity:1;visibility:visible}
   #glossary{margin-top:40px;border-top:1px solid var(--line);padding-top:12px}
   /* floating add button */
   #addBtn{position:fixed;z-index:50;display:none;background:var(--primary);color:var(--primary-fg);border:none;
@@ -294,6 +299,38 @@
       if(last<text.length) frag.appendChild(document.createTextNode(text.slice(last)));
       node.parentNode.replaceChild(frag,node);
     });
+  }
+  // Floating glossary tooltip — bound once, delegated. Appended to <body> with
+  // position:fixed so no ancestor `overflow:hidden` (e.g. tables) can clip it.
+  function setupGlossTips(){
+    if(setupGlossTips._done) return; setupGlossTips._done=true;
+    var tip=document.createElement('div'); tip.id='gloss-tip'; document.body.appendChild(tip);
+    var cur=null, PAD=8, GAP=8;
+    function place(el){
+      var def=el.getAttribute('data-def'); if(!def){ hide(); return; }
+      tip.textContent=def;
+      var t=tip.getBoundingClientRect();          // measured while hidden-but-laid-out
+      var r=el.getBoundingClientRect();
+      var left=Math.min(Math.max(PAD, r.left), Math.max(PAD, window.innerWidth - t.width - PAD));
+      var top=r.bottom + GAP;                      // default: below the word
+      if(top + t.height > window.innerHeight - PAD){
+        var above=r.top - t.height - GAP;          // flip above if it would overflow the bottom
+        if(above >= PAD) top=above;
+      }
+      tip.style.left=Math.round(left)+'px';
+      tip.style.top=Math.round(top)+'px';
+      tip.classList.add('show');
+    }
+    function show(el){ cur=el; place(el); }
+    function hide(){ cur=null; tip.classList.remove('show'); }
+    function closestGloss(n){ return n && n.closest ? n.closest('.gloss') : null; }
+    document.addEventListener('mouseover',function(e){ var g=closestGloss(e.target); if(g) show(g); });
+    document.addEventListener('mouseout',function(e){ var g=closestGloss(e.target);
+      if(g && !(e.relatedTarget && closestGloss(e.relatedTarget)===g)) hide(); });
+    document.addEventListener('focusin',function(e){ var g=closestGloss(e.target); if(g) show(g); });
+    document.addEventListener('focusout',function(e){ if(closestGloss(e.target)) hide(); });
+    window.addEventListener('scroll',function(){ if(cur) hide(); },{passive:true,capture:true});
+    window.addEventListener('resize',function(){ if(cur) hide(); });
   }
   function buildToc(){
     var toc=document.getElementById('toc'); if(!toc) return;
@@ -615,6 +652,7 @@
   function renderDoc(md){
     docEl.innerHTML = mdToHtml(md);
     buildGlossary();      // Task 6 (no-op until defined)
+    setupGlossTips();     // floating fixed-position tooltip (escapes overflow clipping)
     buildToc();           // Task 8 (no-op until defined)
   }
   function loadDoc(){
