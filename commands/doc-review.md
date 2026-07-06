@@ -60,6 +60,9 @@ top-level `.gitignore`. The `.gitignore` write is idempotent.
 
 ```bash
 SLUG=$(basename "$ARGUMENTS" .md | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-//; s/-$//')
+# Non-ASCII names (e.g. Cyrillic) collapse to an empty slug — fall back to a
+# hash of the path so two such docs don't share one folder and overwrite.
+[ -n "$SLUG" ] || SLUG="doc-$(printf '%s' "$ARGUMENTS" | cksum | cut -d' ' -f1)"
 ROOT=".claude/doc-review"
 DEST="$ROOT/$SLUG"
 mkdir -p "$DEST"
@@ -81,7 +84,7 @@ test -f "$DEST/comments.json" || echo '{"version":1,"threads":[]}' > "$DEST/comm
 ```
 
 Then write the humanized markdown from Step 2 to `$DEST/human.md` with the Write
-tool (use the absolute path `<project>/.claude/info/<slug>/human.md`).
+tool (use the absolute path `<project>/.claude/doc-review/<slug>/human.md`).
 
 ## Step 5 — Serve and report
 

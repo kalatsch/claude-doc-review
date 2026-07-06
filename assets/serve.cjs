@@ -56,7 +56,9 @@ const server = http.createServer((req, res) => {
   }
 
   // ---- static files (within DIR only) ----
-  let rel = u.pathname === '/' ? '/review.html' : decodeURIComponent(u.pathname);
+  let rel;
+  try { rel = u.pathname === '/' ? '/review.html' : decodeURIComponent(u.pathname); }
+  catch (e) { res.writeHead(400); res.end('bad path'); return; }  // malformed %-encoding must not crash the process
   const fp = path.normalize(path.join(DIR, rel));
   if (fp !== DIR && !fp.startsWith(DIR + path.sep)) { res.writeHead(403); res.end('forbidden'); return; }
   fs.readFile(fp, (err, buf) => {
@@ -66,7 +68,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {   // loopback only — never expose the doc/comments to the LAN
   console.log('Doc-review сервер:  http://localhost:' + PORT + '/');
   console.log('comments.json:', COMMENTS);
   console.log('Останов: Ctrl+C');

@@ -639,15 +639,37 @@
     try { return (window.marked && (window.marked.parse ? window.marked.parse(md) : window.marked(md))) || ''; }
     catch(e){ return '<pre>'+esc(md)+'</pre>'; }
   }
-  // Comment bodies: render markdown too (bold, code, lists, links). breaks:true so a
+  // Strip active content from HTML before it touches innerHTML. Parsing into an
+  // inert <template> does NOT execute scripts or fire onerror; we then drop
+  // event-handler attributes, javascript:/data:/vbscript: URLs, and script-like
+  // elements. Used to sanitize rendered comment bodies (user-typed / POSTed).
+  function sanitizeHtml(html){
+    var tpl=document.createElement('template'); tpl.innerHTML=String(html||'');
+    tpl.content.querySelectorAll('*').forEach(function(el){
+      var tag=el.tagName.toLowerCase();
+      if(tag==='script'||tag==='style'||tag==='iframe'||tag==='object'||tag==='embed'||tag==='link'||tag==='meta'){ el.remove(); return; }
+      Array.prototype.slice.call(el.attributes).forEach(function(a){
+        var n=a.name.toLowerCase();
+        if(n.indexOf('on')===0){ el.removeAttribute(a.name); return; }
+        if(n==='href'||n==='src'||n==='xlink:href'){
+          var v=(a.value||'').replace(/\s+/g,'').toLowerCase();
+          if(v.indexOf('javascript:')===0||v.indexOf('data:')===0||v.indexOf('vbscript:')===0) el.removeAttribute(a.name);
+        }
+      });
+    });
+    return tpl.innerHTML;
+  }
+  // Comment bodies: render markdown (bold, code, lists, links), then sanitize —
+  // the text is user-typed and also arrives over the local API. breaks:true so a
   // single newline becomes <br>, matching how the text was authored.
   function mdMsg(t){
-    var s=(t==null?'':String(t));
+    var s=(t==null?'':String(t)), html;
     try {
-      if(window.marked && window.marked.parse) return window.marked.parse(s,{breaks:true,gfm:true}) || '';
-      if(window.marked) return window.marked(s,{breaks:true,gfm:true}) || '';
-    } catch(e){}
-    return esc(s);
+      if(window.marked && window.marked.parse) html=window.marked.parse(s,{breaks:true,gfm:true})||'';
+      else if(window.marked) html=window.marked(s,{breaks:true,gfm:true})||'';
+      else return esc(s);
+    } catch(e){ return esc(s); }
+    return sanitizeHtml(html);
   }
   function renderDoc(md){
     docEl.innerHTML = mdToHtml(md);
