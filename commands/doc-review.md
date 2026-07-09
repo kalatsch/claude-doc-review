@@ -1,7 +1,7 @@
 ---
 description: Render a markdown document as a human-friendly review page with glossary, collapsible detail, and an inline commenting layer that syncs to Claude
 argument-hint: "<path/to/document.md>"
-allowed-tools: Bash(node *), Bash(mkdir *), Bash(cp *), Bash(test *), Bash(echo *), Bash(open *), Bash(xdg-open *), Read, Write
+allowed-tools: Bash(node *), Bash(mkdir *), Bash(cp *), Bash(test *), Bash(echo *), Bash(open *), Bash(xdg-open *), Bash(basename *), Bash(tr *), Bash(sed *), Bash(printf *), Bash(cksum *), Bash(cut *), Bash(nohup *), Bash(sleep *), Read, Write
 ---
 
 # /doc-review

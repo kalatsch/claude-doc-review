@@ -1,15 +1,20 @@
 # claude-doc-review Plugin Implementation Plan
 
+> **Historical snapshot (2026-06-19).** File and path names have been updated to
+> match shipped code (`serve.cjs`, `.claude/doc-review/<slug>/`); other details
+> (the embedded command, glossary wrap scope, per-message status) may lag the
+> released plugin. Source of truth: `commands/doc-review.md` and `assets/`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a Claude Code plugin `claude-doc-review` whose `/doc-review <file.md>` command turns a terse technical document Claude wrote for itself into a human-friendly review page (clear prose + glossary tooltips + collapsible technical detail) with an inline text-selection commenting layer that syncs live to Claude through a tiny local server.
 
-**Architecture:** A slash command (runs in the main loop) humanizes the source markdown into `human.md`, copies three proven assets into `<project>/.claude/info/<slug>/`, and starts a Node server. `review.html` fetches `human.md`, renders it client-side with a vendored `marked`, and overlays the commenting engine ported from `screens-admin/.claude/plan/plan.html`. Comments live in `comments.json`, which both the browser (poll/POST) and Claude (file read/write) share.
+**Architecture:** A slash command (runs in the main loop) humanizes the source markdown into `human.md`, copies three proven assets into `<project>/.claude/doc-review/<slug>/`, and starts a Node server. `review.html` fetches `human.md`, renders it client-side with a vendored `marked`, and overlays the commenting engine ported from `screens-admin/.claude/plan/plan.html`. Comments live in `comments.json`, which both the browser (poll/POST) and Claude (file read/write) share.
 
 **Tech Stack:** Node.js (no deps for the server; `marked` vendored as a static asset), plain browser HTML/CSS/JS, Playwright for headless smoke verification, Claude Code plugin conventions (`.claude-plugin/plugin.json`, `commands/`, `${CLAUDE_PLUGIN_ROOT}`).
 
 **Proven source files to port (real artifacts, not placeholders):**
-- `/Users/hubstaff/Desktop/GitLab/screens-admin/.claude/plan/serve.js`
+- `/Users/hubstaff/Desktop/GitLab/screens-admin/.claude/plan/serve.cjs`
 - `/Users/hubstaff/Desktop/GitLab/screens-admin/.claude/plan/plan.html`
 
 **Project root for all paths below:** `/Users/hubstaff/Desktop/GitLab/claude-doc-review-plugin/`
@@ -25,9 +30,9 @@ claude-doc-review-plugin/
 │  └─ marketplace.json     # marketplace entry (mirrors claude-activity)
 ├─ commands/
 │  └─ doc-review.md        # the /doc-review command (orchestration + humanization rules)
-├─ assets/                 # copied verbatim into <project>/.claude/info/<slug>/ at runtime
+├─ assets/                 # copied verbatim into <project>/.claude/doc-review/<slug>/ at runtime
 │  ├─ review.html          # renderer shell + commenting engine (ported, generalized)
-│  ├─ serve.js             # static server + comments API + serves human.md (ported)
+│  ├─ serve.cjs             # static server + comments API + serves human.md (ported)
 │  └─ marked.min.js        # vendored markdown→HTML (offline, no CDN)
 ├─ test/
 │  ├─ serve.test.mjs       # node test: comments API + human.md serving
@@ -44,7 +49,7 @@ claude-doc-review-plugin/
 
 **Responsibilities:**
 - `assets/review.html` — the only source of truth for look & behaviour. Renders any `human.md`; never contains document content itself.
-- `assets/serve.js` — transport only: static files, `GET/POST /api/comments`, `GET /human.md`.
+- `assets/serve.cjs` — transport only: static files, `GET/POST /api/comments`, `GET /human.md`.
 - `commands/doc-review.md` — orchestration + the humanization rules Claude follows.
 - `test/*` — automated verification (node for the server, Playwright for the page).
 
@@ -130,7 +135,7 @@ that syncs live to Claude through a tiny local server.
 /doc-review path/to/document.md
 ```
 
-Artifacts are written to `<project>/.claude/info/<slug>/` and served locally.
+Artifacts are written to `<project>/.claude/doc-review/<slug>/` and served locally.
 Select text on the page to leave a comment; Claude answers in the thread.
 
 See `docs/specs/` for the design and `docs/plans/` for the implementation plan.
@@ -215,10 +220,10 @@ git commit -m "chore: vendor marked@12 and add technical fixture"
 
 ---
 
-## Task 3: `serve.js` — port and extend to serve `human.md`
+## Task 3: `serve.cjs` — port and extend to serve `human.md`
 
 **Files:**
-- Create: `assets/serve.js` (port of `screens-admin/.claude/plan/serve.js`)
+- Create: `assets/serve.cjs` (port of `screens-admin/.claude/plan/serve.cjs`)
 - Test: `test/serve.test.mjs`
 
 - [ ] **Step 1: Copy the proven server as the base**
@@ -226,12 +231,12 @@ git commit -m "chore: vendor marked@12 and add technical fixture"
 Run:
 ```bash
 cd /Users/hubstaff/Desktop/GitLab/claude-doc-review-plugin
-cp ../screens-admin/.claude/plan/serve.js assets/serve.js
+cp ../screens-admin/.claude/plan/serve.cjs assets/serve.cjs
 ```
 
 - [ ] **Step 2: Generalise the served default file and serve `human.md`**
 
-In `assets/serve.js`, the static handler currently maps `/` to `/plan.html`. Change the default page to `review.html`. Find:
+In `assets/serve.cjs`, the static handler currently maps `/` to `/plan.html`. Change the default page to `review.html`. Find:
 ```js
   let rel = u.pathname === '/' ? '/plan.html' : decodeURIComponent(u.pathname);
 ```
@@ -251,13 +256,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const dir = mkdtempSync(join(tmpdir(), 'docrev-'));
-cpSync(new URL('../assets/serve.js', import.meta.url), join(dir, 'serve.js'));
+cpSync(new URL('../assets/serve.cjs', import.meta.url), join(dir, 'serve.cjs'));
 writeFileSync(join(dir, 'review.html'), '<!doctype html><title>ok</title>hello');
 writeFileSync(join(dir, 'human.md'), '# Title\n\nbody');
 writeFileSync(join(dir, 'comments.json'), '{"version":1,"threads":[]}');
 
 const PORT = 4319;
-const srv = spawn(process.execPath, ['serve.js'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
+const srv = spawn(process.execPath, ['serve.cjs'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
 await new Promise(r => setTimeout(r, 500));
 
 let failed = false;
@@ -306,8 +311,8 @@ Expected: a list of `ok:` lines, no `FAIL:`, exit 0. (If `GET / serves review.ht
 - [ ] **Step 5: Commit**
 
 ```bash
-git add assets/serve.js test/serve.test.mjs
-git commit -m "feat: port serve.js, default to review.html, add server test"
+git add assets/serve.cjs test/serve.test.mjs
+git commit -m "feat: port serve.cjs, default to review.html, add server test"
 ```
 
 ---
@@ -425,12 +430,12 @@ import { join } from 'node:path';
 
 const root = new URL('..', import.meta.url);
 const dir = mkdtempSync(join(tmpdir(), 'docrev-smoke-'));
-for (const f of ['serve.js', 'review.html', 'marked.min.js']) cpSync(new URL('assets/' + f, root), join(dir, f));
+for (const f of ['serve.cjs', 'review.html', 'marked.min.js']) cpSync(new URL('assets/' + f, root), join(dir, f));
 writeFileSync(join(dir, 'human.md'), readFileSync(new URL('test/fixtures/sample-technical.md', root)));
 writeFileSync(join(dir, 'comments.json'), '{"version":1,"threads":[]}');
 
 const PORT = 4321;
-const srv = spawn(process.execPath, ['serve.js'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
+const srv = spawn(process.execPath, ['serve.cjs'], { cwd: dir, env: { ...process.env, PORT: String(PORT) } });
 await new Promise(r => setTimeout(r, 600));
 
 let failed = false;
@@ -881,7 +886,7 @@ Hold the rewritten markdown in memory for Step 4 (write it as `human.md`).
 
 ```bash
 SLUG=$(basename "$ARGUMENTS" .md | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-//; s/-$//')
-DEST=".claude/info/$SLUG"
+DEST=".claude/doc-review/$SLUG"
 mkdir -p "$DEST"
 echo "DEST=$DEST"
 ```
@@ -892,21 +897,21 @@ Copy the three assets from the plugin and write the documents:
 
 ```bash
 cp "${CLAUDE_PLUGIN_ROOT}/assets/review.html" "$DEST/review.html"
-cp "${CLAUDE_PLUGIN_ROOT}/assets/serve.js"     "$DEST/serve.js"
+cp "${CLAUDE_PLUGIN_ROOT}/assets/serve.cjs"     "$DEST/serve.cjs"
 cp "${CLAUDE_PLUGIN_ROOT}/assets/marked.min.js" "$DEST/marked.min.js"
 cp "$ARGUMENTS" "$DEST/source.md"
 test -f "$DEST/comments.json" || echo '{"version":1,"threads":[]}' > "$DEST/comments.json"
 ```
 
 Then write the humanized markdown from Step 2 to `$DEST/human.md` with the Write
-tool (use the absolute path `<project>/.claude/info/<slug>/human.md`).
+tool (use the absolute path `<project>/.claude/doc-review/<slug>/human.md`).
 
 ## Step 5 — Serve and report
 
 Start the server in the background and report the URL:
 
 ```bash
-(cd "$DEST" && PORT=${PORT:-4178} node serve.js >/dev/null 2>&1 &) ; sleep 1
+(cd "$DEST" && PORT=${PORT:-4178} node serve.cjs >/dev/null 2>&1 &) ; sleep 1
 echo "http://localhost:${PORT:-4178}/"
 ```
 
@@ -972,15 +977,15 @@ WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 SRC="$ROOT/test/fixtures/sample-technical.md"
 
 SLUG=$(basename "$SRC" .md | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-//; s/-$//')
-DEST="$WORK/.claude/info/$SLUG"; mkdir -p "$DEST"
-cp "$ROOT/assets/review.html" "$DEST/"; cp "$ROOT/assets/serve.js" "$DEST/"; cp "$ROOT/assets/marked.min.js" "$DEST/"
+DEST="$WORK/.claude/doc-review/$SLUG"; mkdir -p "$DEST"
+cp "$ROOT/assets/review.html" "$DEST/"; cp "$ROOT/assets/serve.cjs" "$DEST/"; cp "$ROOT/assets/marked.min.js" "$DEST/"
 cp "$SRC" "$DEST/source.md"; cp "$SRC" "$DEST/human.md"
 echo '{"version":1,"threads":[]}' > "$DEST/comments.json"
 
-PORT=4399; (cd "$DEST" && PORT=$PORT node serve.js >/dev/null 2>&1 &) ; sleep 1
+PORT=4399; (cd "$DEST" && PORT=$PORT node serve.cjs >/dev/null 2>&1 &) ; sleep 1
 code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:$PORT/")
 md=$(curl -s "http://localhost:$PORT/human.md" | head -1)
-pkill -f "node serve.js" || true
+pkill -f "node serve.cjs" || true
 [ "$code" = "200" ] || { echo "FAIL http $code"; exit 1; }
 echo "$md" | grep -q "split engine" || { echo "FAIL human.md not served"; exit 1; }
 echo "e2e OK ($DEST)"
@@ -1012,8 +1017,8 @@ bash test/e2e.sh           # full asset lay-down + serve
 ## How it works
 
 `/doc-review <file.md>` humanizes the file into `human.md` (clear prose +
-`## Словарь` + collapsible `<details>`), copies `review.html`, `serve.js`,
-`marked.min.js` into `<project>/.claude/info/<slug>/`, writes `source.md` and an
+`## Словарь` + collapsible `<details>`), copies `review.html`, `serve.cjs`,
+`marked.min.js` into `<project>/.claude/doc-review/<slug>/`, writes `source.md` and an
 empty `comments.json`, and serves the folder. `review.html` renders `human.md`
 and overlays the commenting engine; comments round-trip through `comments.json`.
 ```
@@ -1029,7 +1034,7 @@ git commit -m "test: end-to-end asset lay-down + serve; document dev workflow"
 
 ## Self-Review (completed during planning)
 
-- **Spec coverage:** humanization + glossary + `<details>` (Tasks 2,6,7,9), commenting engine port + async render (Tasks 4,5), serve.js + human.md (Task 3), `.claude/info/<slug>/` lay-down via `CLAUDE_PLUGIN_ROOT` (Task 9), polish/nav/dark/print/status (Task 8), no mode fork (command has none), plugin packaging (Task 1), e2e smoke (Task 10). All spec sections map to a task.
-- **Type/name consistency:** `human.md`, `source.md`, `comments.json`, `review.html`, `serve.js`, `marked.min.js`, slug rule, `buildGlossary`/`buildToc`/`updateBar`/`loadDoc`/`renderDoc` are used consistently across tasks; stubs for `buildGlossary`/`buildToc` are introduced in Task 4 before being replaced in Tasks 6/8.
+- **Spec coverage:** humanization + glossary + `<details>` (Tasks 2,6,7,9), commenting engine port + async render (Tasks 4,5), serve.cjs + human.md (Task 3), `.claude/doc-review/<slug>/` lay-down via `CLAUDE_PLUGIN_ROOT` (Task 9), polish/nav/dark/print/status (Task 8), no mode fork (command has none), plugin packaging (Task 1), e2e smoke (Task 10). All spec sections map to a task.
+- **Type/name consistency:** `human.md`, `source.md`, `comments.json`, `review.html`, `serve.cjs`, `marked.min.js`, slug rule, `buildGlossary`/`buildToc`/`updateBar`/`loadDoc`/`renderDoc` are used consistently across tasks; stubs for `buildGlossary`/`buildToc` are introduced in Task 4 before being replaced in Tasks 6/8.
 - **Placeholders:** none; every code/step is concrete. The only deliberately deferred niceties (uppercase `.MD` slug, file:// fallback fetch) are called out as acceptable v1 limitations, not TODOs.
 ```

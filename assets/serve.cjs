@@ -75,7 +75,7 @@ server.listen(PORT, '127.0.0.1', () => {   // loopback only — never expose the
 });
 server.on('error', function (e) {
   if (e && e.code === 'EADDRINUSE') {
-    console.error('Порт ' + PORT + ' занят — запустите с другим PORT (напр. PORT=4179 node serve.js).');
+    console.error('Порт ' + PORT + ' занят — запустите с другим PORT (напр. PORT=4179 node serve.cjs).');
     process.exit(1);
   }
   throw e;

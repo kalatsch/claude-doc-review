@@ -6,6 +6,11 @@ read and comment on, with your comments syncing straight back to Claude. No
 cloud, no accounts, no telemetry: it's a single local HTML file and a tiny
 local server, all on your machine.
 
+> **Language:** the generated review page UI is in Russian (`черновик` /
+> `на ревью` / `готово`, `Обсуждение`, `💬 Комментировать`, …). The humanized
+> document itself is in whatever language Claude writes it. This README and the
+> install page are in English.
+
 ![screenshot](docs/screenshot_light.png)
 
 ## Why
@@ -33,8 +38,8 @@ document becomes a back-and-forth review surface instead of a wall of text.
 - **Inline text-selection comments** — select any text on the page to drop a
   comment anchored to that exact quote (highlighted in the document). Each thread
   is an **ongoing back-and-forth**, not a one-shot: reply as many rounds as you
-  need, with nested replies, and Claude answers every open thread that has a new
-  message from you.
+  need, and Claude answers every open thread that has a new message from you
+  (its replies are shown threaded under your comment).
 - **Two-way sync with Claude** — comments persist to a `comments.json` file that
   Claude reads and writes; the page polls and shows Claude's replies **live**, with
   no copy-paste between the doc and the chat. Claude answers every **open** thread;
@@ -46,7 +51,7 @@ document becomes a back-and-forth review surface instead of a wall of text.
   jumps, and click-to-locate (clicking a comment scrolls to its highlight — and
   opens a collapsed block if the quote lives inside one).
 - **Status at a glance** — the header shows open / total comment counts and a
-  draft → in-review → done pill.
+  status pill (`черновик` → `на ревью` → `готово`).
 - **Light & dark themes** — toggle in the header, remembered across sessions.
 - **100% local & private** — no server in the cloud, no account, no telemetry.
   Output is plain files in your project, automatically kept out of its git.
@@ -100,7 +105,7 @@ Claude rewrites it ──► human.md   (plain prose + ## Словарь + <deta
       ▼
 .claude/doc-review/<slug>/        review.html · serve.cjs · marked.min.js
                                   human.md · source.md · comments.json
-      │  node serve.cjs  (free port, opens the browser)
+      │  command picks a free port, starts serve.cjs, opens the browser
       ▼
 review.html  ── renders human.md, builds glossary + TOC, overlays comments
       │
