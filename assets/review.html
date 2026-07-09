@@ -474,9 +474,10 @@
     var h='<div class="msg '+m.author+'" style="margin-left:'+(depth*12)+'px">'
       +'<div class="msg-h"><span class="who">'+(m.author==='claude'?'Claude':'Я')+'</span><span>'+fmt(m.createdAt)+'</span>'
       +'<span style="flex:1"></span>'
+      +(t.status!=='resolved'?'<button class="icon-btn sm" data-act="reply" data-tid="'+t.id+'" data-mid="'+m.id+'" title="Ответить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a4 4 0 0 1 4 4v3"/></svg></button>':'')
       +'<button class="icon-btn sm danger" data-act="delmsg" data-tid="'+t.id+'" data-mid="'+m.id+'" title="Удалить сообщение"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button></div>'
       +'<div class="msg-b">'+mdMsg(m.text)+'</div></div>';
-    if(replyTo===m.id){ h+=composerHtml(t.id,m.id); }
+    if(replyTo===m.id && t.status!=='resolved'){ h+=composerHtml(t.id,m.id); }
     (m.children||[]).forEach(function(c){ h+=msgHtml(t,c,depth+1); });
     return h;
   }

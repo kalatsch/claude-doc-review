@@ -38,8 +38,8 @@ document becomes a back-and-forth review surface instead of a wall of text.
 - **Inline text-selection comments** — select any text on the page to drop a
   comment anchored to that exact quote (highlighted in the document). Each thread
   is an **ongoing back-and-forth**, not a one-shot: reply as many rounds as you
-  need, and Claude answers every open thread that has a new message from you
-  (its replies are shown threaded under your comment).
+  need — either to the thread or to a specific message (nested, via the ↩ button)
+  — and Claude answers every open thread that has a new message from you.
 - **Two-way sync with Claude** — comments persist to a `comments.json` file that
   Claude reads and writes; the page polls and shows Claude's replies **live**, with
   no copy-paste between the doc and the chat. Claude answers every **open** thread;
