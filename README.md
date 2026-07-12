@@ -53,6 +53,14 @@ document becomes a back-and-forth review surface instead of a wall of text.
 - **Status at a glance** — the header shows open / total comment counts and a
   status pill (`черновик` → `на ревью` → `готово`).
 - **Light & dark themes** — toggle in the header, remembered across sessions.
+- **Settings & adjustable layout** — a gear menu (in the panel header) hides
+  resolved threads and shows the live sync status; drag the column dividers to
+  resize the TOC and comment-panel widths (desktop), and on a narrow screen a
+  toggle button slides the comment panel in and out.
+- **Works with or without the server** — opened through the local server,
+  comments sync live. Opened as a plain file (no server — e.g. double-clicking
+  `review.html`), it falls back to a manual **Export / Import JSON** exchange
+  (buttons in the gear menu) so you can still round-trip comments with Claude.
 - **100% local & private** — no server in the cloud, no account, no telemetry.
   Output is plain files in your project, automatically kept out of its git.
 
@@ -127,7 +135,9 @@ review.html  ── renders human.md, builds glossary + TOC, overlays comments
 4. `review.html` renders `human.md` client-side (via a vendored `marked`), builds
    the glossary tooltips and the table of contents, and overlays the commenting
    engine. Comments round-trip through `comments.json`: the page `POST`s yours
-   and polls for changes; Claude reads the file and appends replies.
+   and polls for changes; Claude reads the file and appends replies. Opened as a
+   plain file instead (no server), the page detects the `file://` protocol and
+   switches to a manual **Export / Import JSON** exchange for `comments.json`.
 
 ### Where things live
 
