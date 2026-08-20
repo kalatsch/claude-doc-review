@@ -118,6 +118,9 @@ try {
   (lastH.top >= lastH.barBottom - 1 && lastH.top < lastH.viewH)
     ? ok('TOC click keeps the last heading visible below the bar')
     : fail(`last heading hidden: top=${lastH.top.toFixed(1)}, barBottom=${lastH.barBottom.toFixed(1)}`);
+  lastH.activeId === lastH.id
+    ? ok('scroll-spy marks the last TOC item active at page bottom')
+    : fail(`active TOC item is ${lastH.activeId}, expected last ${lastH.id}`);
   const counts = await page.locator('#bar-counts').textContent();
   /\d+ из \d+/.test(counts || '') ? ok('status bar shows open/total counts') : fail('counts missing: ' + counts);
   await page.click('#themeBtn');

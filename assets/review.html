@@ -352,6 +352,9 @@
       var el=document.getElementById(a.dataset.id); if(el) el.scrollIntoView({block:'start',behavior:'smooth'}); });
     var links=toc.querySelectorAll('a');
     var spy=function(){ var best=null,bestTop=-1e9; heads.forEach(function(h){ var top=h.getBoundingClientRect().top; if(top<120 && top>bestTop){ bestTop=top; best=h.id; } });
+      // At the very bottom the last heading may never cross the top<120 line
+      // (its section is shorter than a viewport) — count it as reached.
+      if(heads.length && window.innerHeight+window.scrollY >= Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)-2) best=heads[heads.length-1].id;
       links.forEach(function(a){ a.classList.toggle('active', a.dataset.id===best); }); };
     window.addEventListener('scroll', spy, {passive:true}); spy();
   }
