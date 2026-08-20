@@ -9,7 +9,11 @@ function freePort(){ return new Promise(res=>{ const s=createServer(); s.listen(
 const root = new URL('..', import.meta.url);
 const dir = mkdtempSync(join(tmpdir(), 'docrev-smoke-'));
 for (const f of ['serve.cjs', 'review.html', 'marked.min.js']) cpSync(new URL('assets/' + f, root), join(dir, f));
-writeFileSync(join(dir, 'human.md'), readFileSync(new URL('test/fixtures/sample-technical.md', root)));
+let fixtureMd = readFileSync(new URL('test/fixtures/sample-technical.md', root), 'utf8');
+// Long tail: the TOC-navigation checks below need a tall page (30+ headings,
+// tens of thousands of px) — short docs mask the sticky-bar overlap bug.
+for (let i = 1; i <= 30; i++) fixtureMd += `\n\n## Раздел ${i}\n\n` + `Текст раздела ${i}. `.repeat(120);
+writeFileSync(join(dir, 'human.md'), fixtureMd);
 writeFileSync(join(dir, 'comments.json'), '{"version":1,"threads":[]}');
 
 const PORT = await freePort();
@@ -78,6 +82,42 @@ try {
 
   const tocLinks = await page.locator('#toc a').count();
   tocLinks >= 2 ? ok('TOC built from headings') : fail('TOC has <2 links: ' + tocLinks);
+
+  // TOC click must land the heading BELOW the sticky #bar (scroll-margin-top),
+  // and the scroll-spy must end up on the clicked item.
+  const waitScrollSettled = async () => {
+    let prev = -1;
+    for (let i = 0; i < 60; i++) {
+      const y = await page.evaluate(() => scrollY);
+      if (y === prev) break;
+      prev = y;
+      await page.waitForTimeout(120);
+    }
+  };
+  const clickTocAndMeasure = async (idx) => {
+    const link = page.locator('#toc a').nth(idx);
+    const id = await link.getAttribute('data-id');
+    await link.click();
+    await waitScrollSettled();
+    return page.evaluate((id) => {
+      const r = document.getElementById(id).getBoundingClientRect();
+      const bar = document.getElementById('bar').getBoundingClientRect();
+      const active = document.querySelector('#toc a.active');
+      return { id, top: r.top, barBottom: bar.bottom,
+               viewH: innerHeight, activeId: active && active.dataset.id };
+    }, id);
+  };
+  const mid = await clickTocAndMeasure(Math.floor(tocLinks / 2));
+  (mid.top >= mid.barBottom - 1 && Math.abs(mid.top - 60) <= 2)
+    ? ok('TOC click lands mid-doc heading at ~60px, clear of the sticky bar')
+    : fail(`mid-doc heading under the bar: top=${mid.top.toFixed(1)}, barBottom=${mid.barBottom.toFixed(1)}`);
+  mid.activeId === mid.id
+    ? ok('scroll-spy ends on the clicked TOC item')
+    : fail(`active TOC item is ${mid.activeId}, expected ${mid.id}`);
+  const lastH = await clickTocAndMeasure(tocLinks - 1);
+  (lastH.top >= lastH.barBottom - 1 && lastH.top < lastH.viewH)
+    ? ok('TOC click keeps the last heading visible below the bar')
+    : fail(`last heading hidden: top=${lastH.top.toFixed(1)}, barBottom=${lastH.barBottom.toFixed(1)}`);
   const counts = await page.locator('#bar-counts').textContent();
   /\d+ из \d+/.test(counts || '') ? ok('status bar shows open/total counts') : fail('counts missing: ' + counts);
   await page.click('#themeBtn');
