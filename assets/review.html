@@ -571,9 +571,15 @@
     else { t.messages.push(m); }
     replyTo=null; save(); render();
   }
+  // A highlight that crosses inline elements (<code>, glossary spans) is several <mark>
+  // segments sharing one data-tid: flash them all, not just the first.
+  function flashMarks(tid){
+    var all=docEl.querySelectorAll('mark.hl[data-tid="'+tid+'"]');
+    for(var i=0;i<all.length;i++){ (function(m){ m.classList.add('flash'); setTimeout(function(){m.classList.remove('flash');},1500); })(all[i]); }
+  }
   function jumpTo(tid){
     var mk=docEl.querySelector('mark.hl[data-tid="'+tid+'"]');
-    if(mk){ var d=mk.closest('details'); if(d&&!d.open)d.open=true; mk.scrollIntoView({block:'center',behavior:'smooth'}); mk.classList.add('flash'); setTimeout(function(){mk.classList.remove('flash');},1500); }
+    if(mk){ var d=mk.closest('details'); if(d&&!d.open)d.open=true; mk.scrollIntoView({block:'center',behavior:'smooth'}); flashMarks(tid); }
     var th=threadsEl.querySelector('.thread[data-tid="'+tid+'"]');
     if(th){ th.classList.add('focused'); setTimeout(function(){th.classList.remove('focused');},1200); }
   }
@@ -600,7 +606,7 @@
     var m=list[openIdx];
     var md=m.closest('details'); if(md&&!md.open)md.open=true;
     m.scrollIntoView({block:'center',behavior:'smooth'});
-    m.classList.add('flash'); setTimeout(function(){m.classList.remove('flash');},1500);
+    flashMarks(m.dataset.tid);
     var th=threadsEl.querySelector('.thread[data-tid="'+m.dataset.tid+'"]');
     if(th){ th.scrollIntoView({block:'nearest',behavior:'smooth'}); th.classList.add('focused'); setTimeout(function(){th.classList.remove('focused');},1200); }
   }

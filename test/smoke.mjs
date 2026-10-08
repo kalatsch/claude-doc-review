@@ -93,6 +93,26 @@ try {
   const triMarked = tri && await page.locator(`#doc mark.hl[data-tid="${tri.id}"]`).count();
   triMarked >= 1 ? ok('trimmed triple-click thread still resolves to a highlight') : fail('trimmed thread has no highlight (start/end out of sync with quote)');
 
+  // A highlight that crosses inline elements (<code>, glossary spans) is several <mark>
+  // segments. Clicking the quote in the panel must flash ALL of them, not just the first.
+  const triSegments = tri && await page.locator(`#doc mark.hl[data-tid="${tri.id}"]`).count();
+  triSegments >= 2 ? ok(`triple-click highlight spans ${triSegments} mark segments (fixture crosses <code>)`) : fail('expected a multi-segment highlight, got ' + triSegments);
+  await page.click(`#threads .thread[data-tid="${tri.id}"] .t-quote`);
+  const flashed = await page.evaluate((tid) => {
+    const all = [...document.querySelectorAll(`#doc mark.hl[data-tid="${tid}"]`)];
+    return { total: all.length, flashed: all.filter(m => m.classList.contains('flash')).length };
+  }, tri.id);
+  flashed.flashed === flashed.total ? ok('clicking the quote flashes every segment of the highlight') : fail(`only ${flashed.flashed} of ${flashed.total} segments flashed`);
+  // Same for the prev/next open-comment buttons in the panel header.
+  await page.waitForTimeout(1600); // let the previous flash expire
+  await page.click('#nextOpen');
+  const navFlash = await page.evaluate(() => {
+    const lit = [...document.querySelectorAll('#doc mark.hl.flash')];
+    const tid = lit[0] && lit[0].dataset.tid;
+    return { lit: lit.length, total: tid ? document.querySelectorAll(`#doc mark.hl[data-tid="${tid}"]`).length : 0 };
+  });
+  (navFlash.lit >= 2 && navFlash.lit === navFlash.total) ? ok('next-open-comment flashes every segment of the highlight') : fail(`next-open flashed ${navFlash.lit} of ${navFlash.total} segments`);
+
   // The composer textarea grows with its content (up to a cap) instead of scrolling inside
   // a fixed 54px box.
   const ta = page.locator('#threads .thread textarea').first();
