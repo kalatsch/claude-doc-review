@@ -140,7 +140,7 @@
   .msg-b li{margin:.12em 0}
   .msg-b h1,.msg-b h2,.msg-b h3,.msg-b h4{font-size:14px;font-weight:700;margin:.6em 0 .2em}
   .composer{margin-top:8px}
-  .composer textarea{width:100%;min-height:54px;resize:vertical;font-family:var(--body);font-size:14px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;line-height:1.5}
+  .composer textarea{width:100%;min-height:54px;max-height:min(40vh,320px);resize:none;overflow-y:auto;font-family:var(--body);font-size:14px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;line-height:1.5}
   .composer textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
   .composer-a{display:flex;gap:6px;margin-top:6px}
   .empty{color:var(--muted);font-size:13px;text-align:center;padding:24px 8px}
@@ -428,6 +428,9 @@
         var from=Math.max(span.start,s)-s, to=Math.min(span.end,e)-s;
         try{
           var r=document.createRange(); r.setStart(tn,from); r.setEnd(tn,to);
+          // Whitespace-only text with no layout box (the "\n" between blocks) must not be
+          // wrapped: an inline <mark> with padding would get a line box of its own.
+          if(!r.toString().trim() && !r.getClientRects().length) continue;
           var mk=document.createElement('mark'); mk.className='hl'+(t.status==='resolved'?' hl-resolved':''); mk.dataset.tid=t.id;
           r.surroundContents(mk);
         }catch(e2){}
@@ -457,8 +460,13 @@
     if(!lastRange) return;
     var start=offsetOf(lastRange.startContainer,lastRange.startOffset);
     var end=offsetOf(lastRange.endContainer,lastRange.endOffset);
+    var quote=lastRange.toString();
+    // A triple-click (or a drag past the end of a line) runs the range into the whitespace
+    // between blocks — the "\n" marked emits after </p>. Trim it so the highlight stops at the text.
+    var lead=quote.match(/^\s*/)[0].length, trail=quote.match(/\s*$/)[0].length;
+    start+=lead; end-=trail; quote=quote.slice(lead, quote.length-trail);
     if(end<=start){ hideAdd(); return; }
-    var t={ id:uid(), quote:lastRange.toString(), start:start, end:end, status:'open', createdAt:nowts(), messages:[] };
+    var t={ id:uid(), quote:quote, start:start, end:end, status:'open', createdAt:nowts(), messages:[] };
     state.threads.push(t); save(); render();
     var s=document.getSelection(); if(s) s.removeAllRanges(); hideAdd();
     var ta=document.getElementById('ta-'+t.id+'-root'); if(ta){ ta.scrollIntoView({block:'center'}); ta.focus(); }
@@ -544,6 +552,17 @@
       var t=getThread(tid); if(t){ sendMsg(t, pid==='root'?null:pid); }
     }
   });
+  // The composer textarea grows with its content (capped by max-height in CSS). The panel is
+  // scrolled by the same delta so the caret line and the Send button stay put on screen —
+  // the field grows upward instead of pushing its buttons out of view.
+  function autosize(ta){
+    var before=ta.getBoundingClientRect().bottom;
+    ta.style.height='auto';
+    ta.style.height=(ta.scrollHeight+ta.offsetHeight-ta.clientHeight)+'px';
+    var d=ta.getBoundingClientRect().bottom-before;
+    if(d) threadsEl.scrollTop+=d;
+  }
+  threadsEl.addEventListener('input', function(e){ if(e.target.tagName==='TEXTAREA') autosize(e.target); });
   function sendMsg(t, pid){
     var ta=document.getElementById('ta-'+t.id+'-'+(pid||'root')); if(!ta) return;
     var text=ta.value.trim(); if(!text) return;

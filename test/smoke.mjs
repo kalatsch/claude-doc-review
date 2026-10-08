@@ -67,6 +67,56 @@ try {
     ? ok('comment persisted to comments.json') : fail('comment not persisted');
   const mark = await page.locator('#doc mark.hl').count();
   mark >= 1 ? ok('highlight rendered in document') : fail('no highlight mark');
+
+  // Triple-click selects the whole paragraph PLUS the "\n" marked emits between blocks
+  // (the range ends at the next block, offset 0). The stored quote must be trimmed and no
+  // <mark> may wrap that inter-block whitespace — it rendered as a stray highlighted line.
+  await page.locator('#doc p').nth(1).click({ clickCount: 3 });
+  await page.waitForSelector('#addBtn', { state: 'visible' });
+  const addBox2 = await page.locator('#addBtn').boundingBox();
+  await page.mouse.click(addBox2.x + addBox2.width / 2, addBox2.y + addBox2.height / 2);
+  await page.waitForFunction(() => document.querySelectorAll('#threads .thread').length >= 2);
+  const strayMarks = await page.evaluate(() =>
+    [...document.querySelectorAll('#doc mark.hl')].filter(m => !m.textContent.trim())
+      .map(m => m.parentNode.tagName + ':' + JSON.stringify(m.textContent)));
+  strayMarks.length === 0 ? ok('triple-click highlight wraps no whitespace-only text node') : fail('stray whitespace marks: ' + strayMarks.join(', '));
+  let saved2 = { threads: [] };
+  for (let i = 0; i < 30; i++) {
+    try { saved2 = JSON.parse(readFileSync(join(dir, 'comments.json'), 'utf8')); } catch {}
+    if (saved2.threads.length >= 2) break;
+    await page.waitForTimeout(100);
+  }
+  const tri = saved2.threads[saved2.threads.length - 1];
+  (tri && tri.quote.length > 0 && tri.quote === tri.quote.trim())
+    ? ok('triple-click quote is stored without the trailing line break')
+    : fail('quote not trimmed: ' + JSON.stringify(tri && tri.quote));
+  const triMarked = tri && await page.locator(`#doc mark.hl[data-tid="${tri.id}"]`).count();
+  triMarked >= 1 ? ok('trimmed triple-click thread still resolves to a highlight') : fail('trimmed thread has no highlight (start/end out of sync with quote)');
+
+  // The composer textarea grows with its content (up to a cap) instead of scrolling inside
+  // a fixed 54px box.
+  const ta = page.locator('#threads .thread textarea').first();
+  const taH0 = (await ta.boundingBox()).height;
+  await ta.fill(Array.from({ length: 8 }, (_, i) => 'строка ' + (i + 1)).join('\n'));
+  const taH1 = (await ta.boundingBox()).height;
+  const taFits = await ta.evaluate(e => e.scrollHeight <= e.clientHeight + 1);
+  (taH1 > taH0 + 60 && taFits) ? ok('composer textarea grows to fit 8 lines') : fail(`textarea did not grow: ${taH0} -> ${taH1}, fits=${taFits}`);
+  await ta.fill(Array.from({ length: 80 }, (_, i) => 'строка ' + (i + 1)).join('\n'));
+  const taH2 = (await ta.boundingBox()).height;
+  const taScrolls = await ta.evaluate(e => e.scrollHeight > e.clientHeight && getComputedStyle(e).overflowY !== 'hidden');
+  (taH2 < 600 && taScrolls) ? ok('composer textarea stops growing at its cap and scrolls inside') : fail(`textarea cap: h=${taH2}, scrolls=${taScrolls}`);
+  // …and it grows upward: with the panel scrollable, the panel scrolls by the same delta so
+  // the field's bottom edge (caret line + Send button) stays put on screen.
+  await page.setViewportSize({ width: 1280, height: 480 });
+  await ta.fill('');
+  await ta.evaluate(e => e.scrollIntoView({ block: 'end' }));
+  const up0 = await ta.evaluate(e => ({ bottom: e.getBoundingClientRect().bottom, st: document.getElementById('threads').scrollTop }));
+  await ta.fill(Array.from({ length: 6 }, (_, i) => 'строка ' + (i + 1)).join('\n'));
+  const up1 = await ta.evaluate(e => ({ bottom: e.getBoundingClientRect().bottom, st: document.getElementById('threads').scrollTop }));
+  (Math.abs(up1.bottom - up0.bottom) <= 2 && up1.st > up0.st)
+    ? ok('composer textarea grows upward: bottom edge stays, panel scrolls by the delta')
+    : fail(`textarea bottom ${up0.bottom.toFixed(1)} -> ${up1.bottom.toFixed(1)}, panel scrollTop ${up0.st} -> ${up1.st}`);
+  await page.setViewportSize({ width: 1280, height: 720 });
   const glossCount = await page.locator('#doc .gloss').count();
   glossCount >= 1 ? ok('glossary terms wrapped with tooltip spans') : fail('no .gloss spans');
   const def = await page.locator('#doc .gloss').first().getAttribute('data-def');
